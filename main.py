@@ -1,4 +1,5 @@
 import pygame
+import math
 from pygame.locals import *
 
 BLACK = (0, 0, 0)
@@ -13,6 +14,7 @@ class Ars1:
         # Robot parameters
         self.posx = 300
         self.posy = 300
+        self.angle = 0
 
         # Walls
         self.walls = [
@@ -25,6 +27,7 @@ class Ars1:
 
         # Display parameters
         self.size = self.weight, self.height = 800, 800
+        self.radius = 40
 
     def on_init(self):
         pygame.init()
@@ -39,15 +42,19 @@ class Ars1:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 self.posx = self.posx - 10
+                self.angle = math.radians(180)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
                 self.posx = self.posx + 10
+                self.angle = 0
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.posy = self.posy - 10
+                self.angle = math.radians(270)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
                 self.posy = self.posy + 10
+                self.angle = math.radians(90)
 
         self.redraw()
 
@@ -80,7 +87,9 @@ class Ars1:
             pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
 
         # Draw the robot
-        pygame.draw.circle(self._display_surf, BLUE, (self.posx, self.posy), 25, 0)
+        pygame.draw.circle(self._display_surf, (0, 0, 255), (self.posx, self.posy), self.radius, 0)
+        pygame.draw.line(self._display_surf, (255, 255, 255), (self.posx, self.posy), (
+        self.posx + self.radius * math.cos(self.angle), self.posy + self.radius * math.sin(self.angle)), 2)
 
         # Update display
         pygame.display.update()
