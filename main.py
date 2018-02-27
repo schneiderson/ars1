@@ -1,16 +1,32 @@
 import pygame
 from pygame.locals import *
 
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
 
 class Ars1:
     def __init__(self):
         self._running = True
         self._display_surf = None
+
+        # Robot parameters
         self.posx = 300
         self.posy = 300
         self.velocity_base = 1
         self.vel_x = 0
         self.vel_y = 0
+
+        # Walls
+        self.walls = [
+            # (x1,y1), (x2,y2)
+            [(50, 50), (750, 50)],
+            [(50, 750), (750, 750)],
+            [(50, 50), (50, 750)],
+            [(750, 50), (750, 750)],
+        ]
+
+        # Display parameters
         self.size = self.weight, self.height = 800, 800
         self.time = pygame.time.get_ticks()
 
@@ -71,8 +87,17 @@ class Ars1:
         self.on_cleanup()
 
     def redraw(self):
+        # Clean display
         self._display_surf.fill((255, 255, 255))
-        self.circle = pygame.draw.circle(self._display_surf, (0, 0, 255), (self.posx, self.posy), 25, 0)
+
+        # Draw walls
+        for w in self.walls:
+            pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
+
+        # Draw the robot
+        pygame.draw.circle(self._display_surf, BLUE, (self.posx, self.posy), 25, 0)
+
+        # Update display
         pygame.display.update()
 
 
