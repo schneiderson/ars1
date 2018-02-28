@@ -1,11 +1,6 @@
-import tensorflow as tf
 import h5py
 from keras.models import Sequential
 from keras.layers import Dense
-
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True  # Prevent gpu mem error
-session = tf.Session(config=config)
 
 filepath = "weights/w1.hdf5"
 
