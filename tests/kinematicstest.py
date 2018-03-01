@@ -3,10 +3,7 @@ import math
 from bot import kinematics as kin
 
 class TestKinematics(unittest.TestCase):
-    """
-    Test the add function from the kin module
-    """
- 
+
     def test_total_velocity(self):
         tmp = kin.total_velocity(1, 1)
         self.assertEqual(tmp, 1)
