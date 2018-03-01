@@ -75,7 +75,7 @@ def bot_calc_coordinate( pos_x, pos_y, angle, vel_l, vel_r, delta_t = 1, wheel_d
    # velocities are different (angle will change)
     else:
         # scale rotation by delta_t
-        rr = rotation_rate_by_velocities( vel_l, vel_r, wheel_dist ) * 2 * math.pi * delta_t
+        rr = rotation_rate_by_velocities( vel_l, vel_r, wheel_dist ) * delta_t
 
         # calc new position
         x_tmp = pos_x - x_icc

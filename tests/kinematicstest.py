@@ -131,8 +131,8 @@ class TestKinematics(unittest.TestCase):
         self.assertEqual(d, 0)
 
         # streched curve
-        x, y, d = kin.bot_calc_coordinate(0, 0, 0, 1, 2, 1, 4)
-        self.assertEqual((round(x), round(y)), (6, 6))
+        x, y, d = kin.bot_calc_coordinate(0, 0, 0, 1, 2, math.pi, 4)
+        self.assertEqual((round(x), round(y)), (3, 3))
         self.assertEqual(d, 90)
 
  
