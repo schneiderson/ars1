@@ -2,6 +2,7 @@ import random
 import math
 import costfuncs
 
+__author__ = 'Olve Drageset'
 
 def getcost(agent):
     return agent.cost

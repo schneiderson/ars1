@@ -1,6 +1,7 @@
+''' KINEMATICS MODULE '''
 import math
 
-''' KINEMATICS '''
+__author__ = 'Steffen Schneider'
 
 
 def total_velocity(vel_l, vel_r):
