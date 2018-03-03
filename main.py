@@ -9,6 +9,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
+COLLISION_TOLERANCE = 0.001
 
 class Ars1:
     def __init__(self):
@@ -18,15 +19,13 @@ class Ars1:
         # Robot parameters
         self.robot_radius = 30
         self.posx = 400
-        self.posy = 400
-        self.previous_posx = 0
-        self.previous_posy = 0
+        self.posy = 175
         self.robot_angle = 0
         
-        self.velocity_base = 1
-        self.velocity_max = 10
-        self.vel_left = 6
-        self.vel_right = 5
+        self.velocity_base = 0.1
+        self.velocity_max = 1
+        self.vel_left = 0.65
+        self.vel_right = 0.50
 
         # Walls
         # A wall is defined as 2 points: [(x1,y1), (x2,y2)] which gives a line from x1,y1 to x2,y2
@@ -38,10 +37,10 @@ class Ars1:
             [(750, 50), (750, 750)],
             
             # Inner walls
-            # [(300, 300), (500, 300)],
-            # [(300, 500), (500, 500)],
-            # [(300, 300), (300, 500)],
-            # [(500, 300), (500, 500)],
+            [(300, 300), (500, 300)],
+            [(300, 500), (500, 500)],
+            [(300, 300), (300, 500)],
+            [(500, 300), (500, 500)],
         
         ]
         
@@ -60,11 +59,9 @@ class Ars1:
         self.time = pygame.time.get_ticks()
         
     def update_robot_posx(self, x):
-        self.previous_posx = self.posx
         self.posx = x
         
     def update_robot_posy(self, y):
-        self.previous_posy = self.posy
         self.posy = y
 
     def on_init(self):
@@ -98,14 +95,16 @@ class Ars1:
     def on_loop(self):
         # Update position
         delta_time = pygame.time.get_ticks() - self.time  # Calculate time since last frame
-        if delta_time - 250 > 0:
+        if delta_time - 20 > 0:
             self.time = pygame.time.get_ticks()
             
-            # TODO: check coordinate calculation
-            pos = kin.bot_calc_coordinate(self.posx, self.posy, self.robot_angle, self.vel_right, self.vel_left, delta_time/100, self.robot_radius)
-            self.update_robot_posx(int(pos[0]))
-            self.update_robot_posy(int(pos[1]))
-            self.robot_angle = int(pos[2])
+            # vel_right and vel_left are switched on purpose to compensate for the pygame coordinate system (y-axis is flipped, with 0,0 point being top left)
+            left_velocity = float(format(self.vel_right, '.5f'))
+            right_velocity = float(format(self.vel_left, '.5f'))
+            pos = kin.bot_calc_coordinate(self.posx, self.posy, self.robot_angle, left_velocity, right_velocity, delta_time/10, self.robot_radius*2)
+            self.update_robot_posx(pos[0])
+            self.update_robot_posy(pos[1])
+            self.robot_angle = pos[2]
                 
         # Update sensors
         self.update_sensors()
@@ -137,7 +136,7 @@ class Ars1:
             pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
         
         # Draw sensors
-        robot_pos = (self.posx, self.posy)
+        robot_pos = (int(self.posx), int(self.posy))
         for index, sensor in enumerate(self.sensors):
             pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
             textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
@@ -153,16 +152,16 @@ class Ars1:
             
         # Draw debug metrics
         debug = ["Debug info:",
-                "Time: " + str(pygame.time.get_ticks()) + " ms",
-                "Frames: " + str(self.frames),
-                "FPS: " + str(self.frames / (pygame.time.get_ticks()/1000)),
-                "",
-                "Robot:",
-                "Angle: " + str(self.robot_angle),
-                "Pos_x: " + str(self.posx),
-                "Pos_y: " + str(self.posy),
-                "Vel_left: " + str(self.vel_left),
-                "Vel_right: " + str(self.vel_right)]
+                 "Time: " + str(pygame.time.get_ticks()) + " ms",
+                 "Frames: " + str(self.frames),
+                 "FPS: " + str(self.frames / (pygame.time.get_ticks()/1000)),
+                 "",
+                 "Robot:",
+                 "Angle: " + str(self.robot_angle),
+                 "Pos_x: " + str(self.posx),
+                 "Pos_y: " + str(self.posy),
+                 "Vel _left: " + str(self.vel_left),
+                 "Vel_right: " + str(self.vel_right)]
         for index, info in enumerate(debug):
             self._display_surf.blit(game_font.render(info, False, BLACK), (800,50+(index*15)))
         
@@ -172,9 +171,6 @@ class Ars1:
     # Update all infrared sensor values
     # Author: Camiel Kerkhofs
     def update_sensors(self):
-        # Skip update if there has been no movement
-        # if (self.previous_posx == self.posx and self.previous_posy == self.posy):
-        #     return True
         
         for index, sensor in enumerate(self.sensors):
             # Determine current sensor endpoint
@@ -185,6 +181,7 @@ class Ars1:
             sensor_end = \
                 self.posx + closest_collision * math.cos(theta_rad), \
                 self.posy + closest_collision * math.sin(theta_rad)
+            intersect_wall = 0
 
             # Check collision points for each wall
             for wall in self.walls:
@@ -196,17 +193,28 @@ class Ars1:
                     if distance < closest_collision:
                         closest_collision = distance
                         sensor_end = intersect
+                        intersect_wall = wall
                         
             # Transform linear distance measure and update sensor value
             # TODO: find a distance transformation that fits the ANN
             transformed_distance = (self.sensor_max - closest_collision) ** self.dist_transformation_factor
             self.sensors[index] = [closest_collision, transformed_distance, sensor_end]
             
-            # Restore previous position upon collision with wall
-            # TODO: properly handle collision event (For collision handling, apply motion only parallel to wall, rest motion perpendicular to wall)
-            if closest_collision < self.robot_radius-5:
-                self.update_robot_posx(self.previous_posx)
-                self.update_robot_posy(self.previous_posy)
+            # Handle wall collisions, apply motion only parallel to wall, rest motion perpendicular to wall
+            if closest_collision < self.robot_radius - COLLISION_TOLERANCE:
+                # The robot is moved back along the angle of the current (infringing) sensor using the illegal distance
+                illegal_distance = (self.robot_radius - closest_collision) + self.robot_radius
+                corrected_position = sensor_end[0] - illegal_distance * math.cos(theta_rad), \
+                                     sensor_end[1] - illegal_distance * math.sin(theta_rad)
+                self.update_robot_posx(corrected_position[0])
+                self.update_robot_posy(corrected_position[1])
+                
+                self.update_sensors()
+                
+                # TODO: motion parallel from wall continues normally, but should be slown down by a weight to discourage 'pushing' the wall
+                # xDiff = intersect_wall[1][0] - intersect_wall[0][0]
+                # yDiff = intersect_wall[1][1] - intersect_wall[0][1]
+                # wall_angle = math.degrees(math.atan2(yDiff, xDiff))
 
     # Finds the intersection between two lines a and b defined by their respective endpoints p1 and p2
     # Author: Camiel Kerkhofs
@@ -233,18 +241,16 @@ class Ars1:
         y = det(d, y_diff) / div
         
         # Check if intersection exceeds the segments
-        TOLERANCE = 0.001
-        if x < min(a_p1[0], a_p2[0]) - TOLERANCE: return False
-        if x > max(a_p1[0], a_p2[0]) + TOLERANCE: return False
-        if y < min(a_p1[1], a_p2[1]) - TOLERANCE: return False
-        if y > max(a_p1[1], a_p2[1]) + TOLERANCE: return False
-        if x < min(b_p1[0], b_p2[0]) - TOLERANCE: return False
-        if x > max(b_p1[0], b_p2[0]) + TOLERANCE: return False
-        if y < min(b_p1[1], b_p2[1]) - TOLERANCE: return False
-        if y > max(b_p1[1], b_p2[1]) + TOLERANCE: return False
+        if x < min(a_p1[0], a_p2[0]) - COLLISION_TOLERANCE: return False
+        if x > max(a_p1[0], a_p2[0]) + COLLISION_TOLERANCE: return False
+        if y < min(a_p1[1], a_p2[1]) - COLLISION_TOLERANCE: return False
+        if y > max(a_p1[1], a_p2[1]) + COLLISION_TOLERANCE: return False
+        if x < min(b_p1[0], b_p2[0]) - COLLISION_TOLERANCE: return False
+        if x > max(b_p1[0], b_p2[0]) + COLLISION_TOLERANCE: return False
+        if y < min(b_p1[1], b_p2[1]) - COLLISION_TOLERANCE: return False
+        if y > max(b_p1[1], b_p2[1]) + COLLISION_TOLERANCE: return False
     
         return x, y
-        
 
 if __name__ == "__main__":
     ars1_app = Ars1()
