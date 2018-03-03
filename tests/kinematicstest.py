@@ -2,6 +2,7 @@ import unittest
 import math
 from bot import kinematics as kin
 
+__author__ = 'Steffen Schneider'
 
 class TestKinematics(unittest.TestCase):
 
