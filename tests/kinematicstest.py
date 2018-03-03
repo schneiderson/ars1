@@ -112,22 +112,22 @@ class TestKinematics(unittest.TestCase):
         self.assertEqual(d, 90)
 
         # quarter turn (own axis)
-        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -0.25, 0.25, 1, 2)
+        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -0.25, 0.25, 2 * math.pi, 2)
         self.assertEqual((round(x), round(y)), (0, 0))
         self.assertEqual(d, 90)
 
         # half turn (own axis)
-        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -0.5, 0.5, 1, 2)
+        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -0.5, 0.5, 2 * math.pi, 2)
         self.assertEqual((round(x), round(y)), (0, 0))
         self.assertEqual(d, 180)
 
         # full turn (own axis)
-        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -1, 1, 1, 2)
+        x, y, d = kin.bot_calc_coordinate(0, 0, 0, -1, 1, 2 * math.pi, 2)
         self.assertEqual((round(x), round(y)), (0, 0))
         self.assertEqual(d, 0)
 
         # stretched curve
-        x, y, d = kin.bot_calc_coordinate(0, 0, 0, 1, 2, math.pi, 4)
+        x, y, d = kin.bot_calc_coordinate(0, 0, 0, 1, 2, math.pi, 2)
         self.assertEqual((round(x), round(y)), (3, 3))
         self.assertEqual(d, 90)
 
