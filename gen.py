@@ -160,7 +160,6 @@ class GenAlg:
         print("MIN COST: ", self.pop.pop[0].cost, ", AVG COST:", sumcost/len(self.pop.pop))
         print("[x,y] of min cost individual: ", self.pop.pop[0].get_output_params(2))
 
-    #TODO: Debug the fact that this method does not return a list of Agents, but a list of None instead, with one agent at the end
     def reproduce(self, crossover_function, elite_rate):
 
         # Make offspring with some of the population. Save top individuals as elitism
@@ -228,7 +227,7 @@ class GenAlg:
             mut_size = self.mutation_size + (1 - self.mutation_size) / parent_individuals * i  # Less fit -> mutate more
             nr_of_children = 3 - max(int(round(i / (parent_individuals * 0.333))), 2)  # Less fit -> less children
             for j in range(0, nr_of_children):
-                new_generation.append(self.pop.pop[i].mutate(mutation_rate=mut_rate, mutation_size=mut_size, value_range=self.value_range))  # Pick one of the children randomly # TODO: Finish
+                new_generation.append(self.pop.pop[i].mutate(mutation_rate=mut_rate, mutation_size=mut_size, value_range=self.value_range))  # Pick one of the children randomly #
 
         # Elitism
         for i in range(0, elite_individuals):
