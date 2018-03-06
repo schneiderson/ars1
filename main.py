@@ -10,14 +10,12 @@ WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
 
-GRAPHICS_ENABLED = True
-TIME_DILATION = 2 # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
-
-
 class Ars1:
     def __init__(self):
         self._running = True
         self._display_surf = None
+        self.graphics_enabled = True
+        self.time_dilation = 1 # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
         
         self.robot = bot.Robot()
         self.velocity_base = 0.1
@@ -58,7 +56,7 @@ class Ars1:
         
     def on_init(self):
         pygame.init()
-        if GRAPHICS_ENABLED: self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        if self.graphics_enabled: self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
 
         self.robot.update_sensors(self.walls)
@@ -116,16 +114,8 @@ class Ars1:
     def on_cleanup(self):
         pygame.quit()
 
-    def on_execute(self):
-        if self.on_init() == False:
-            self._running = False
-
-        while self._running:
-            for event in pygame.event.get():
-                self.on_event(event)
-            self.on_loop()
-            self.on_render()
-        self.on_cleanup()
+    def fitness(self):
+        return self.cleaned
 
     def on_render(self):
         self.frames += 1
@@ -133,7 +123,7 @@ class Ars1:
         debug = ["Debug info:",
                  "Realtime: " + str(pygame.time.get_ticks()) + " ms",
                  "Simulation time: " + str(self.get_elapsed_time()) + " ms",
-                 "Time dilation: * " + str(TIME_DILATION),
+                 "Time dilation: * " + str(self.time_dilation),
                  "Frames: " + str(self.frames),
                  "FPS: " + str(self.frames / (pygame.time.get_ticks() / 1000)),
                  "",
@@ -145,8 +135,8 @@ class Ars1:
                  "Vel_right: " + str(self.robot.vel_right),
                  "",
                  "Cleaned: " + str(self.cleaned)]
-        if not GRAPHICS_ENABLED:
-            if self.get_elapsed_time() % (1000*TIME_DILATION) == 0:
+        if not self.graphics_enabled:
+            if self.get_elapsed_time() % (1000*self.time_dilation) == 0:
                 print("\n"*10)
                 for index, info in enumerate(debug):
                     print(info)
@@ -191,8 +181,37 @@ class Ars1:
             pygame.display.update()
             
     def get_elapsed_time(self):
-        return int(pygame.time.get_ticks() * TIME_DILATION)
+        return int(pygame.time.get_ticks() * self.time_dilation)
+
+    # Start a simulation
+    # If simulate is set to True, no graphics are displayed and the given time dilation is applied to the simulation speed
+    # Returns the fitness of the simulation
+    # Timeout in seconds
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0):
+        self.time_dilation = time_dilation
+        self.graphics_enabled = graphics_enabled
+
+        if self.on_init() == False:
+            self._running = False
+
+        start_time = self.get_elapsed_time()
+        while self._running:
+            for event in pygame.event.get():
+                self.on_event(event)
+            self.on_loop()
+            self.on_render()
+
+            if timeout > 0:
+                if self.get_elapsed_time() - (timeout*1000) > start_time:
+                    self._running = False
+
+        self.on_cleanup()
+
+        if graphics_enabled:
+            return self.fitness()
 
 if __name__ == "__main__":
     ars1_app = Ars1()
-    ars1_app.on_execute()
+
+    # Simulate a game with graphics at speed 1 for 5 seconds
+    print("Simulation fitness result: " + str(ars1_app.simulate(True, 1, 20)))
