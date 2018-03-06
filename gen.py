@@ -3,6 +3,9 @@ import math
 import costfuncs
 
 
+__author__ = "Olve Drageset"
+
+
 def getcost(individual):
     return individual.cost
 
@@ -15,8 +18,8 @@ def single_point_crossover(parent1, parent2):
 
 
 def two_point_crossover(parent1, parent2):
-    length = max(len(parent1.gene), len(parent2.gene))
-    point1 = random.randrange(0, int(length-1*0.66))  # Put the first point somewhere in the first two thirds
+    length = min(len(parent1.gene), len(parent2.gene))
+    point1 = random.randrange(0, int(length - 1*0.66))  # Put the first point somewhere in the first two thirds
     point2 = random.randrange(point1, length - 1)
     p1s1 = parent1.gene[0:point1]
     p1s2 = parent1.gene[point1:point2]
@@ -257,4 +260,4 @@ class GenAlg:
         return new_generation
 
 
-GenAlg()
+GenAlg(crossover_function=single_point_crossover, gene_length=20, max_generations=50, init_near_zero=False)
