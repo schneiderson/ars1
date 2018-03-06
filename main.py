@@ -11,7 +11,7 @@ BLUE = (66, 134, 244)
 RED = (226, 123, 120)
 
 GRAPHICS_ENABLED = True
-TIME_DILATION = 2 # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
+TIME_DILATION = 2  # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
 
 
 class Ars1:
