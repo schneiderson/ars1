@@ -5,12 +5,13 @@ from bot import robot as bot
 pygame.font.init()
 game_font = pygame.font.SysFont('arial', 16)
 BLACK = (0, 0, 0)
+GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
 
 GRAPHICS_ENABLED = True
-TIME_DILATION = 4 # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
+TIME_DILATION = 2 # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
 
 
 class Ars1:
@@ -39,9 +40,19 @@ class Ars1:
             [(500, 300), (500, 500)],
         
         ]
+
+        # Dirt (a grid of integers representing the places cleaned by the robot)
+        # cell value 0 means the robot has not been there yet (dirty)
+        # cell value 1 means the robot has not been there (clean)
+        self.grid_size = 128 # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
+        self.cleaned = 0
+        self.dirt = [0] * self.grid_size
+        for index in range(self.grid_size):
+            row = [0] * self.grid_size
+            self.dirt[index] = row
         
         # Display parameters
-        self.size = self.width, self.height = 1000, 800
+        self.size = self.width, self.height = 1024, 768
         self.frames = 0
         self.time = self.get_elapsed_time()
         
@@ -84,6 +95,24 @@ class Ars1:
             # Update robot sensors
             self.robot.update_sensors(self.walls)
 
+            # Update dirt
+            dirt_i = int(self.robot.posx / (self.width / self.grid_size))
+            dirt_j = int(self.robot.posy / (self.height / self.grid_size))
+            for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) -1):
+                for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) -1):
+                    if self.dirt[dirt_j-n][dirt_i-m] == 0:
+                        self.dirt[dirt_j-n][dirt_i-m] = 1
+                        self.cleaned += 1
+                    if self.dirt[dirt_j+n][dirt_i+m] == 0:
+                        self.dirt[dirt_j+n][dirt_i+m] = 1
+                        self.cleaned += 1
+                    if self.dirt[dirt_j-n][dirt_i+m] == 0:
+                        self.dirt[dirt_j-n][dirt_i+m] = 1
+                        self.cleaned += 1
+                    if self.dirt[dirt_j+n][dirt_i-m] == 0:
+                        self.dirt[dirt_j+n][dirt_i-m] = 1
+                        self.cleaned += 1
+
     def on_cleanup(self):
         pygame.quit()
 
@@ -113,7 +142,9 @@ class Ars1:
                  "Pos_x: " + str(self.robot.posx),
                  "Pos_y: " + str(self.robot.posy),
                  "Vel_left: " + str(self.robot.vel_left),
-                 "Vel_right: " + str(self.robot.vel_right)]
+                 "Vel_right: " + str(self.robot.vel_right),
+                 "",
+                 "Cleaned: " + str(self.cleaned)]
         if not GRAPHICS_ENABLED:
             if self.get_elapsed_time() % (1000*TIME_DILATION) == 0:
                 print("\n"*10)
@@ -121,8 +152,18 @@ class Ars1:
                     print(info)
         else:
             # Clean display
-            self._display_surf.fill(WHITE)
-    
+            self._display_surf.fill(GRAY)
+
+            # Draw dirt
+            for index_row, dirt_row in enumerate(self.dirt):
+                tile_height = self.height / self.grid_size
+                y_offset = tile_height * index_row
+                for index_column, dirt_column in enumerate(dirt_row):
+                    if dirt_column == 1:
+                        tile_width = self.width / self.grid_size
+                        x_offset = tile_width * index_column
+                        pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
+
             # Draw walls
             for w in self.walls:
                 pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
