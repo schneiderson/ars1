@@ -30,25 +30,28 @@ def flatten_weights(list_of_mats):
 
 
 class NeuralNet:
-    def __init__(self, weights, inputs=14, hidden_layers=1, hidden_layer_nodes=6, outputs=2):
-        self.inputs = inputs
+    def __init__(self, weights, nr_of_input_nodes=14, hidden_layers=1, hidden_layer_nodes=6, nr_of_outputs=2):
+        self.nr_of_input_nodes = nr_of_input_nodes
         self.hidden_layers = hidden_layers
         self.hidden_layer_nodes = hidden_layer_nodes
-        self.outputs = outputs
+        self.outputs = nr_of_outputs
         self.weights = weights  # One array of numbers, that contain the weights ordered
+        self.prev_out = []
+        for i in range(0, nr_of_outputs):
+            self.prev_out.append(0)
 
     def weights_as_mat(self):
 
         weights = []
 
         if self.hidden_layers > 0:
-            w1 = np.empty([self.hidden_layer_nodes, self.inputs])
+            w1 = np.empty([self.hidden_layer_nodes, self.nr_of_input_nodes])
         else:
-            w1 = np.empty([self.outputs, self.inputs])
+            w1 = np.empty([self.outputs, self.nr_of_input_nodes])
         start = 0
         for index, vector in enumerate(w1):
-            w1[index] = self.weights[start:start + self.inputs]
-            start += self.inputs
+            w1[index] = self.weights[start:start + self.nr_of_input_nodes]
+            start += self.nr_of_input_nodes
         weights.append(w1)
 
         if self.hidden_layers > 0:
@@ -67,12 +70,15 @@ class NeuralNet:
         return weights
 
     def forward_prop(self, inputs):
-
+        # for out in self.prev_out:
+        #     inputs.append(out)
+        #
         weights_mats = self.weights_as_mat()
-
+        output = inputs
         for index in range(0, len(weights_mats)):
-            inputs = self.forward_prop_recursive(inputs, weights_mats)
-        return inputs
+            output = self.forward_prop_recursive(output, weights_mats)
+            self.prev_out = output
+        return output
 
     def forward_prop_recursive(self, input_values, weights_mat):
         H = np.matmul(input_values, weights_mat[0])

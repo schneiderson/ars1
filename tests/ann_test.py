@@ -9,7 +9,7 @@ class TestANN(unittest.TestCase):
         array = [0., 1., 2., 3., 4., 5., 6., 7.]
         mat1 = [np.array([[0., 1., 2., 3.], [4., 5., 6., 7.]])]
 
-        net = nn.NeuralNet(weights=array, inputs=4, hidden_layers=0, outputs=2)
+        net = nn.NeuralNet(weights=array, nr_of_input_nodes=4, hidden_layers=0, nr_of_outputs=2)
         mat2 = net.weights_as_mat()
         print(mat1)
         print(mat2)
@@ -20,7 +20,7 @@ class TestANN(unittest.TestCase):
         array = [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11.]
         mat1 = [np.array([[0., 1., 2., 3.], [4., 5., 6., 7.]]), np.array([[8., 9.], [10., 11.]])]
 
-        net = nn.NeuralNet(weights=array, inputs=4, hidden_layers=1, hidden_layer_nodes=2, outputs=2)
+        net = nn.NeuralNet(weights=array, nr_of_input_nodes=4, hidden_layers=1, hidden_layer_nodes=2, nr_of_outputs=2)
         mat2 = net.weights_as_mat()
         print(mat1)
         print(mat2)

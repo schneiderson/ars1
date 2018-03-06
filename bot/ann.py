@@ -8,6 +8,7 @@ class ANN:
         #TODO: the weights are coming straight from the argument that was passed to environment.simulate()
 
     def get_velocities(self, inputs):
+
         pass
         #TODO: the inputs are in format [sensor_value1, sensor_value2, ..., sensor_valueN]
         #TODO: ANN magic

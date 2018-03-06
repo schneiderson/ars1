@@ -1,6 +1,7 @@
 import random
 import math
 import costfuncs
+import bot.environment as env
 
 
 __author__ = "Olve Drageset"
@@ -126,7 +127,7 @@ class GenAlg:
         self.mutation_size = mutation_size
         self.generation_counter = 1
         self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
-
+        self.environment = env.Environment()
         print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
         # Calculate the starting cost of the population
         for agent in self.pop.pop:
