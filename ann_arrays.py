@@ -1,22 +1,6 @@
 import numpy as np
-import random
 
 __author__ = 'Olve Drageset, Andre Gramlich'
-
-
-def gen_nn(weights, inputs=14, hidden_layers=1, hidden_layer_nodes=6, outputs=2, init_range=[-1, 1]):
-    weights = []
-    num_of_weights = 0
-    if hidden_layers > 0:
-        num_of_weights += inputs * hidden_layer_nodes  # Links from input to first hidden
-        num_of_weights += hidden_layer_nodes * outputs  # Links from last hidden to out
-    if hidden_layers > 1:
-        num_of_weights += hidden_layer_nodes ** hidden_layers  # Links between hidden layers
-    else:
-        num_of_weights += inputs * outputs  # Links from input to output layer
-
-    for i in range(0, num_of_weights):
-        weights.append(random.uniform(init_range[0], init_range[1]))
 
 
 def flatten_weights(list_of_mats):
@@ -45,10 +29,12 @@ class NeuralNet:
 
         weights = []
 
+        # Initialize matrix from input layer to first layer
         if self.hidden_layers > 0:
             w1 = np.empty([self.hidden_layer_nodes, self.nr_of_input_nodes])
-        else:
+        else:  # If first layer is output layer
             w1 = np.empty([self.nr_of_outputs, self.nr_of_input_nodes])
+
         start = 0
         for index, vector in enumerate(w1):
             w1[index] = self.weights[start:start + self.nr_of_input_nodes]
@@ -56,6 +42,7 @@ class NeuralNet:
         weights.append(w1)
 
         if self.hidden_layers > 0:
+            # Matrices between hidden layers
             for i in range(1, self.hidden_layers):
                 wi = np.empty([self.hidden_layer_nodes, self.hidden_layer_nodes])
                 for index, vector in enumerate(wi):
@@ -63,11 +50,12 @@ class NeuralNet:
                     start += self.hidden_layer_nodes
                 weights.append(wi)
 
-            wL = np.empty([self.hidden_layer_nodes, self.nr_of_outputs])
-            for index, vector in enumerate(wL):
-                wL[index] = self.weights[start:start + self.hidden_layer_nodes]
+            # Matrix from last hidden layer to output layer
+            wn = np.empty([self.hidden_layer_nodes, self.nr_of_outputs])
+            for index, vector in enumerate(wn):
+                wn[index] = self.weights[start:start + self.hidden_layer_nodes]
                 start += self.hidden_layer_nodes
-            weights.append(wL)
+            weights.append(wn)
         return weights
 
     def forward_prop(self, inputs):
