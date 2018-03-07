@@ -10,7 +10,7 @@ def rosenbrock(x, y):
 # Rastrigin benchmarking function for n dimensions
 def rastrigin(*x, **kwargs):
     a = kwargs.get('A', 10)
-    return a + sum([(x**2 - a * np.cos(2 * math.pi * x)) for x in x])
+    return a * len(x) + sum([(x**2 - a * np.cos(2 * math.pi * x)) for x in x])
 
 
 # The cost function from Rico's Machine Learning homework

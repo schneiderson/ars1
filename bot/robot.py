@@ -15,8 +15,8 @@ class Robot:
         self.angle = 0
         
         # Velocity
-        self.vel_left = 0.65
-        self.vel_right = 0.50
+        self.vel_left = 0
+        self.vel_right = 0
 
         """
          Infrared sensors
