@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import ann_arrays as nn
 import numpy.testing as npt
+import math
 
 __author__ = 'Olve Drageset'
 
@@ -45,14 +46,14 @@ class TestANN(unittest.TestCase):
         nr_of_outputs = 2
         weights = [np.array([[1., 2.], [1., 2.]])]
         weights_flat = nn.flatten_weights(weights)
-        expected_output = [2., 4.]
+        expected_output = nn.flatten_weights(np.tanh([2., 4.]))
         net = nn.NeuralNet(weights=weights_flat,
                            nr_of_input_nodes=nr_of_input_nodes,
                            hidden_layers=hidden_layers,
                            hidden_layer_nodes=hidden_layer_nodes,
                            nr_of_outputs=nr_of_outputs,
                            recurrence=False)
-        output = nn.flatten_weights(net.forward_prop_init(inputs))
+        output = nn.flatten_weights(net.forward_prop(inputs))
         print(f"OUTPUT FROM ANN: {output}")
         self.assertAlmostEqual(expected_output, output)
 

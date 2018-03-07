@@ -70,24 +70,15 @@ class NeuralNet:
             weights.append(wL)
         return weights
 
-    def forward_prop_init(self, inputs):
-        print(f"INPUT:{inputs}")
+    def forward_prop(self, inputs):
+        # Append last rounds outputs as input values if recurrence is enabled
         if self.recurrence:
             for out in self.prev_out:
                 inputs.append(out)
-        print(f"INPUTS AFTER RECURRENCE APPENDED:{inputs}")
 
-        weights_mats = self.weights_as_mat()
-        output = inputs
-        for weights in weights_mats:
-            print(f"WEIGHTS: {weights}")
-            # output = np.tanh(np.matmul(output, weights))
-            output = np.matmul(output, weights)
-            print(f"OUTPUTS:{output}")
-        self.prev_out = output
+        output = inputs  # The inputs will be transformed to output through several matmuls
+        # This is where we propagate through the layers
+        for weights in self.weights_as_mat():
+            output = np.tanh(np.matmul(output, weights))
+        self.prev_out = output  # Store for future recurrence use
         return output
-
-    def forward_prop(self, input_values, weights_mat):
-        H = np.matmul(input_values, weights_mat[0])
-        H = np.tanh(H)
-        return H
