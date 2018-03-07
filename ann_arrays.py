@@ -30,15 +30,18 @@ def flatten_weights(list_of_mats):
 
 
 class NeuralNet:
-    def __init__(self, weights, nr_of_input_nodes=14, hidden_layers=1, hidden_layer_nodes=6, nr_of_outputs=2):
+    def __init__(self, weights, nr_of_input_nodes=12, hidden_layers=1, hidden_layer_nodes=6, nr_of_outputs=2, recurrence=False):
         self.nr_of_input_nodes = nr_of_input_nodes
         self.hidden_layers = hidden_layers
         self.hidden_layer_nodes = hidden_layer_nodes
-        self.outputs = nr_of_outputs
+        self.nr_of_outputs = nr_of_outputs
         self.weights = weights  # One array of numbers, that contain the weights ordered
-        self.prev_out = []
-        for i in range(0, nr_of_outputs):
-            self.prev_out.append(0)
+        self.recurrence = recurrence
+        if recurrence:
+            self.prev_out = []
+            self.nr_of_input_nodes += nr_of_outputs
+            for i in range(0, nr_of_outputs):
+                self.prev_out.append(0)
 
     def weights_as_mat(self):
 
@@ -47,7 +50,7 @@ class NeuralNet:
         if self.hidden_layers > 0:
             w1 = np.empty([self.hidden_layer_nodes, self.nr_of_input_nodes])
         else:
-            w1 = np.empty([self.outputs, self.nr_of_input_nodes])
+            w1 = np.empty([self.nr_of_outputs, self.nr_of_input_nodes])
         start = 0
         for index, vector in enumerate(w1):
             w1[index] = self.weights[start:start + self.nr_of_input_nodes]
@@ -62,25 +65,31 @@ class NeuralNet:
                     start += self.hidden_layer_nodes
                 weights.append(wi)
 
-            wL = np.empty([self.hidden_layer_nodes, self.outputs])
+            wL = np.empty([self.hidden_layer_nodes, self.nr_of_outputs])
             for index, vector in enumerate(wL):
                 wL[index] = self.weights[start:start + self.hidden_layer_nodes]
                 start += self.hidden_layer_nodes
             weights.append(wL)
         return weights
 
-    def forward_prop(self, inputs):
-        # for out in self.prev_out:
-        #     inputs.append(out)
-        #
+    def forward_prop_init(self, inputs):
+        print(f"INPUT:{inputs}")
+        if self.recurrence:
+            for out in self.prev_out:
+                inputs.append(out)
+        print(f"INPUTS AFTER RECURRENCE APPENDED:{inputs}")
+
         weights_mats = self.weights_as_mat()
         output = inputs
-        for index in range(0, len(weights_mats)):
-            output = self.forward_prop_recursive(output, weights_mats)
-            self.prev_out = output
+        for weights in weights_mats:
+            print(f"WEIGHTS: {weights}")
+            # output = np.tanh(np.matmul(output, weights))
+            output = np.matmul(output, weights)
+            print(f"OUTPUTS:{output}")
+        self.prev_out = output
         return output
 
-    def forward_prop_recursive(self, input_values, weights_mat):
+    def forward_prop(self, input_values, weights_mat):
         H = np.matmul(input_values, weights_mat[0])
         H = np.tanh(H)
         return H
