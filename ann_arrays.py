@@ -1,9 +1,7 @@
 import numpy as np
 import random
-import math
 
-
-__author__ = 'Olve Drageset'
+__author__ = 'Olve Drageset, Andre Gramlich'
 
 
 def gen_nn(weights, inputs=14, hidden_layers=1, hidden_layer_nodes=6, outputs=2, init_range=[-1, 1]):
