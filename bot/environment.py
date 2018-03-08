@@ -277,7 +277,7 @@ class Environment:
                 self.on_render()
 
                 if timeout > 0:
-                    if self.time_diff_ms( datetime.now(), self.simulation_start_time ) > (timeout * 1000):
+                    if ( self.get_elapsed_time() > (timeout * 1000)):
                         self._running = False
 
             # pygame.quit()
