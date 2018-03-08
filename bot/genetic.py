@@ -1,9 +1,12 @@
+import datetime
 import random
 import math
 
+import os
 
 __author__ = "Olve Drageset"
 
+WEIGHTS_DIRECTORY = 'weights/weights_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 def getcost(individual):
     return individual.cost
@@ -155,7 +158,6 @@ class GenAlg:
         if self.verbose: print("-----------------------------------------------")
 
         # Run max_generations generations
-        GenAlg.generation_counter = 1
         for gen_index in range(0, max_generations):
             GenAlg.generation_counter += 1
             GenAlg.gen_progress = 0
@@ -214,7 +216,7 @@ class GenAlg:
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
             out = individual.get_output_params(2)
-            if self.verbose: print(f"REPRODUCE COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
+            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -232,6 +234,13 @@ class GenAlg:
             print(f"MIN COST:{min_cost} AVG COST: {avg_cost}")
             print(f"BEST GENE: {self.pop.pop[0].gene}")
             print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
+
+            # Save weights to file:
+            ensure_weights_directory()
+            file = open(WEIGHTS_DIRECTORY + '/gen' + str(GenAlg.generation_counter) + '_cost' + str(int(min_cost)) + '_avg' + str(int(avg_cost)), 'w')
+            file.write(str(self.pop.pop[0].gene))
+            file.close()
+
         return new_generation
 
     # Rank-based reproduction through random mutations only
@@ -280,3 +289,10 @@ class GenAlg:
 
 
 #GenAlg(crossover_function=single_point_crossover, gene_length=20, max_generations=20, init_near_zero=False)
+
+
+def ensure_weights_directory():
+    directory = os.path.dirname(WEIGHTS_DIRECTORY + '/temp.txt')
+    if not os.path.exists(directory):
+        print('Created new weights directory: ' + directory)
+        os.makedirs(directory)
