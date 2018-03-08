@@ -3,6 +3,7 @@ import pygame
 import math
 from datetime import datetime
 from bot import robot as bot
+from bot import genetic as gen
 from bot import ann as ann
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
@@ -18,22 +19,24 @@ RED = (226, 123, 120)
 
 class Environment:
     """
-        The environment controls a single simulation (graphics are optional)
+        The environment controls a single simulation at once (graphics are optional)
     """
 
     def reset(self):
+        """
+            Reset the environment before a new simulation starts
+        """
         self._running = True
         self._display_surf = None
         self.graphics_enabled = True
-        self.time_dilation = 1  # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
+        self.static_time_mode = False
+        self.time_dilation = 1
 
         # reset bot
         self.robot.reset()
+        self.neural_net = None
 
-        self.velocity_base = 0.1
-        self.velocity_min = -1
-        self.velocity_max = 1
-
+        # Reset the dust grid
         self.cleaned = 0
         for index in range(self.grid_size):
             row = [0] * self.grid_size
@@ -41,16 +44,16 @@ class Environment:
 
         self.frames = 0
         self.updates = 0
-        
-        self.time = 0                                   # time in milliseconds             
+        self.time = 0                                   # elapsed time in milliseconds
         self.simulation_start_time = datetime.now()     # timestamp
 
     def __init__(self):
-        self.pygame_initialized = False
+        self._pygame_initialized = False
         self._running = True
         self._display_surf = None
         self.graphics_enabled = True
-        self.time_dilation = 1  # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
+        self.static_time_mode = False
+        self.time_dilation = 1
 
         self.robot = bot.Robot()
         self.neural_net = None
@@ -76,7 +79,7 @@ class Environment:
 
         ]
 
-        # Dirt (a grid of integers representing the places cleaned by the robot)
+        # Dust grid (a grid of integers representing the places cleaned by the robot)
         # cell value 0 means the robot has not been there yet (dirty)
         # cell value 1 means the robot has not been there (clean)
         self.grid_size = 128  # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
@@ -90,16 +93,20 @@ class Environment:
         self.size = self.width, self.height = 1024, 768
         self.frames = 0
         self.updates = 0
+        self.time = 0
         self.simulation_start_time = datetime.now()
+        self.static_time_mode_delta_t = 200  # Simulation will update using this delta_t if static_time_mode is enabled.
 
     def on_init(self):
         """
             Initialize the simulation
         """
-        if not self.pygame_initialized:
-            pygame.init()
-            if self.graphics_enabled: self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
-            self._running = True
+        if self.graphics_enabled:
+            if not self._pygame_initialized:
+                pygame.init()
+                self._pygame_initialized = True
+            self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self._running = True
         self.robot.update_sensors(self.walls)
         self.on_render()
 
@@ -107,6 +114,9 @@ class Environment:
         """
             Some keyboard events for testing purposes (not used during training)
         """
+
+        if not self.graphics_enabled:
+            return True
 
         if event.type == pygame.QUIT:
             self._running = False
@@ -130,13 +140,22 @@ class Environment:
             Update all relevant movement and simulation logic
         """
 
-        # Calculate time since last frame
-        current_time = self.get_elapsed_time()
-        delta_time = current_time - self.time
+        # Check if update is allowed (always allowed if static time mode is enabled)
+        update = False
+        if self.static_time_mode:
+            # Use the static delta t
+            update = True
+            delta_time = self.static_time_mode_delta_t
+        else:
+            # Calculate time since last frame
+            current_time = self.get_elapsed_time()
+            delta_time = current_time - self.time
+            if delta_time - 10 > 0:
+                update = True
+                self.time = current_time
 
-        if delta_time - 10 > 0:
+        if update:
             self.updates += 1
-            self.time = current_time
 
             # Get a new move from the neural net if it was initialized
             if self.neural_net is not None:
@@ -178,24 +197,36 @@ class Environment:
         self.frames += 1
 
         debug = ["Debug info:",
-                 "Realtime: " + str(pygame.time.get_ticks()) + " ms",
-                 "Simulation time: " + str(self.get_elapsed_time()) + " ms",
+                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
+                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
                  "Time dilation: * " + str(self.time_dilation),
                  "Frames: " + str(self.frames),
-                 "FPS: " + str(self.frames / (pygame.time.get_ticks() / 1000)),
+                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
                  "Updates: " + str(self.updates),
-                 "UPS: " + str(self.updates / (pygame.time.get_ticks() / 1000)),
+                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
                  "",
                  "Robot:",
-                 "Angle: " + str(self.robot.angle),
-                 "Pos_x: " + str(self.robot.posx),
-                 "Pos_y: " + str(self.robot.posy),
-                 "Vel_left: " + str(self.robot.vel_left),
-                 "Vel_right: " + str(self.robot.vel_right),
+                 "  Angle: " + str(int(self.robot.angle)),
+                 "  Pos_x: " + str(int(self.robot.posx)),
+                 "  Pos_y: " + str(int(self.robot.posy)),
+                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
+                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
                  "",
-                 "Cleaned: " + str(self.cleaned)]
+                 "Cleaned: " + str(self.cleaned),
+                 "",
+                 "Genetic algorithm: ",
+                 "   Current generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter),
+                 "      Size: " + str(gen.GenAlg.pop_size_current),
+                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
+                 "   Last generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
+                 "      Best cost: " + str(gen.GenAlg.best_cost),
+                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
+                 ""]
         if not self.graphics_enabled:
-            if self.get_elapsed_time() % (1000 * self.time_dilation) == 0:
+            # Prints the debug information to the console every 2 seconds (realtime)
+            if self.get_elapsed_time(realtime=True) % 2000 == 0:
                 print("\n" * 10)
                 for index, info in enumerate(debug):
                     print(info)
@@ -239,35 +270,59 @@ class Environment:
             # Update display
             pygame.display.update()
 
-    def get_elapsed_time(self):
+    def get_elapsed_time(self, realtime=False):
         """
-            Returns the elapsed pygame time multiplied by the time dilation factor
+            Returns the elapsed time in milliseconds multiplied by the time dilation factor
+            If realtime is set to True, time dilation is ignored
         """
-        elapsed_t = self.time_diff_ms( datetime.now(), self.simulation_start_time )
-        return int(elapsed_t * self.time_dilation)
+        # Returns a fake elapsed time if time mode is static
+        if self.static_time_mode and not realtime:
+            return int(self.static_time_mode_delta_t * self.updates)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[]):
+        # Calculate the actual elapsed time
+        elapsed_t = self.time_diff_ms(datetime.now(), self.simulation_start_time)
+        if realtime:
+            return int(elapsed_t)
+        else:
+            return int(elapsed_t * self.time_dilation)
+
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
             time_dilation: integer; All time interactions are multiplied  by this factor. 1 = realtime
+                Set time_dilation to 0 to use a static delta_t for updating (simulation will run as fast as hardware allows)
             timeout: integer; Timeout of simulation in seconds. 0 = no timeout
 
-            Returns the fitness evaluation of the simulation (float) when the simluation is finished
+            Returns the fitness evaluation of the simulation (float) when the simulation is finished
         """
-        self.reset()
         try:
-            # Apply configuration parameters
-            self.time_dilation = time_dilation
+            self.reset()
+
+            # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
             if len(weights) > 0:
                 self.neural_net = ann.NeuralNet(weights)
             else:
-                # Just use some sample velocity in case weights are missing
-                self.robot.set_velocity(0.65, 0.5)
+                # Just use some sample velocity in case weights are missing (demo mode)
+                # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
+                self.robot.set_velocity(1, 1)
+            self.time_dilation = time_dilation
+            if time_dilation == 0:
+                self.static_time_mode = True
+                if static_delta_t is not None:
+                    # Static delta_t can not exceed the robots radius or else it will shoot trough environment limits!
+                    if static_delta_t > 200:
+                        raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
+                    self.static_time_mode_delta_t = static_delta_t
 
             if self.on_init() == False:
-                self._running = False
+                # Has no return value but will return False if pygame library encounters an internal error
+                raise ValueError('Error during pygame initialization')
+
+            # Reset simulation time
+            self.time = 0
+            self.simulation_start_time = datetime.now()
 
             while self._running:
                 if graphics_enabled:
@@ -277,15 +332,18 @@ class Environment:
                 self.on_render()
 
                 if timeout > 0:
-                    if ( self.get_elapsed_time() > (timeout * 1000)):
+                    if (self.get_elapsed_time() > (timeout * 1000)):
                         self._running = False
 
-            # pygame.quit()
+            #pygame.quit()
             return self.fitness()
         except IndexError as inst:
             print('\033[91m' + "=== ERROR === Simulation failed with message: ")
             print(inst)
-            print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
+            if self.static_time_mode:
+                print("This error is likely caused by the robot going off screen. Try lowering the static delta_time")
+            else:
+                print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
             print('\033[0m' + "\n")
             return 0
         except Exception as inst:

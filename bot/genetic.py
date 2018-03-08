@@ -111,6 +111,12 @@ class Population:
 
 
 class GenAlg:
+    generation_counter = 0
+    gen_progress = 0
+    best_cost = 0
+    avg_cost = 0
+    pop_size = 0
+    pop_size_current = 0
 
     def __init__(self,
                  cost_function=None,
@@ -125,16 +131,18 @@ class GenAlg:
                  init_near_zero=False,
                  verbose=True):
         self.cost_function = cost_function
-        self.pop_size = pop_size
+        GenAlg.pop_size = pop_size
+        GenAlg.pop_size_current = pop_size
         self.value_range = value_range
         self.mutation_rate = mutation_rate
         self.mutation_size = mutation_size
-        self.generation_counter = 1
         self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
         self.verbose = verbose
         if self.verbose: print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
         # Calculate the starting cost of the population
+        GenAlg.gen_progress = 0
         for agent in self.pop.pop:
+            GenAlg.gen_progress += 1
             agent.update_cost(self.cost_function)
 
         # Sort population from lowest to highest cost
@@ -147,13 +155,16 @@ class GenAlg:
         if self.verbose: print("-----------------------------------------------")
 
         # Run max_generations generations
+        GenAlg.generation_counter = 1
         for gen_index in range(0, max_generations):
+            GenAlg.generation_counter += 1
+            GenAlg.gen_progress = 0
             # Reproduce, creating a new generation
             self.pop.pop = self.reproduce(crossover_function, elite_rate)
-            self.generation_counter += 1
 
             # Calculate fitness/cost of every individual in the current generation
             for agent in self.pop.pop:
+                GenAlg.gen_progress += 1
                 agent.cost = self.cost_function(agent.gene)
 
         # Sort by cost, ascending, and print minimal and average cost
@@ -171,8 +182,8 @@ class GenAlg:
 
         # Make offspring with some of the population. Save top individuals as elitism
         parent_rate = 0.75
-        parent_individuals = int(self.pop_size * parent_rate)
-        elite_individuals = min(int(elite_rate * self.pop_size), 1)  # max(min(int(self.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
+        parent_individuals = int(GenAlg.pop_size * parent_rate)
+        elite_individuals = min(int(elite_rate * GenAlg.pop_size), 1)  # max(min(int(GenAlg.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -196,13 +207,14 @@ class GenAlg:
         for i in range(0, elite_individuals):
             new_generation.append(self.pop.pop[i])
 
-        if self.verbose: print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+        GenAlg.pop_size_current = len(new_generation)
+        if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals the new generation
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
             out = individual.get_output_params(2)
-            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
+            if self.verbose: print(f"REPRODUCE COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -212,17 +224,22 @@ class GenAlg:
         for individual in self.pop.pop:
             sumcost += individual.cost
         if self.verbose:
-            print(f"MIN COST:{self.pop.pop[0].cost} AVG COST: {sumcost/len(self.pop.pop)}")
+            min_cost = self.pop.pop[0].cost
+            avg_cost = sumcost/len(self.pop.pop)
+            if (min_cost) < self.best_cost:
+                GenAlg.best_cost = min_cost
+            GenAlg.avg_cost = avg_cost
+            print(f"MIN COST:{min_cost} AVG COST: {avg_cost}")
             print(f"BEST GENE: {self.pop.pop[0].gene}")
-            print(f"END GEN {self.generation_counter}-----------------------------------------------")
+            print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
         return new_generation
 
     # Rank-based reproduction through random mutations only
     def reproduce_mutate_only(self, elite_rate):
 
         # Make offspring with some of the population. Save top 1-3 as elitism
-        parent_individuals = self.pop_size  #
-        elite_individuals = self.pop_size * elite_rate
+        parent_individuals = GenAlg.pop_size  #
+        elite_individuals = GenAlg.pop_size * elite_rate
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -240,7 +257,7 @@ class GenAlg:
         for i in range(0, elite_individuals):
             new_generation.append(self.pop.pop[i])
 
-        if self.verbose: print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+        if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals the new generation
         for individual in self.pop.pop:
@@ -258,7 +275,7 @@ class GenAlg:
             print("MIN COST:", self.pop.pop[0].cost, "AVG COST:", sumcost / len(self.pop.pop))
             print("BEST GENE: ", self.pop.pop[0].gene)
 
-            print(f"END GEN {self.generation_counter}-----------------------------------------------")
+            print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
         return new_generation
 
 

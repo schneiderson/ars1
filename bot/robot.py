@@ -56,6 +56,10 @@ class Robot:
             move the robot using the given delta time
             vel_right and vel_left are switched on purpose to compensate for the pygame coordinate system (y-axis is flipped, with 0,0 point being top left)
         """
+
+        if delta_time >= self.radius*7:
+            # Delta_t exceeds robot radius; wall detection becomes unreliable at this point
+            raise ValueError('movement delta_time of ' + str(delta_time) + 'ms exceeds robot radius. This might be caused by a high time_dilation or a screen drag. (Do not drag the screen!)')
         
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
@@ -92,7 +96,6 @@ class Robot:
                         intersect_wall = wall
         
             # Transform linear distance measure and update sensor value
-            # TODO: find a distance transformation that fits the ANN
             transformed_distance = (self.sensor_max - closest_collision) ** self.dist_transformation_factor
             self.sensors[index] = [closest_collision, transformed_distance, sensor_end]
         
