@@ -26,7 +26,8 @@ class Environment:
         self.graphics_enabled = True
         self.time_dilation = 1  # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
 
-        self.robot = bot.Robot()
+        # reset bot
+        self.robot.reset()
 
         self.velocity_base = 0.1
         self.velocity_min = -1

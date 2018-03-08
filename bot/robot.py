@@ -10,9 +10,9 @@ class Robot:
         
         # Robot position
         self.radius = 30
-        self.posx = 400.0
-        self.posy = 175.0
-        self.angle = 0
+        self.initial_posx = self.posx = 400.0
+        self.initial_posy = self.posy = 175.0
+        self.initial_angle = self.angle = 0
         
         # Velocity
         self.vel_left = 0
@@ -28,6 +28,19 @@ class Robot:
         self.sensor_max = 500
         self.dist_transformation_factor = 2
         self.sensors = [(0, 0, (self.posx, self.posy))] * 12
+
+    def reset(self):
+        self.posx = self.initial_posx
+        self.posy = self.initial_posy
+        self.angle = self.initial_angle
+
+        self.vel_left = 0
+        self.vel_right = 0
+
+    def set_robot_initial_position(self, x, y, angle):
+        self.initial_posx = x
+        self.initial_posy = y
+        self.initial_angle = angle
 
     def set_robot_position(self, x, y, angle):
         self.posx = x
