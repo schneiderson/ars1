@@ -41,7 +41,12 @@ def two_point_crossover(parent1, parent2):
     gene5 = p2s1 + p1s2 + p1s3
     gene6 = p1s1 + p2s2 + p2s3
 
-    return [Individual(gene1), Individual(gene2), Individual(gene3), Individual(gene4), Individual(gene5), Individual(gene6)]
+    return [Individual(gene1),
+            Individual(gene2),
+            Individual(gene3),
+            Individual(gene4),
+            Individual(gene5),
+            Individual(gene6)]
 
 
 class Individual:
@@ -79,8 +84,7 @@ class Individual:
         return out
 
     def update_cost(self, cost_function):
-        out = self.get_output_params(2)
-        self.cost = cost_function(out[0], out[1])
+        self.cost = cost_function(self.gene)
         return self.cost
 
 
@@ -109,6 +113,7 @@ class Population:
 
 
 class GenAlg:
+
     def __init__(self,
                  cost_function=costfuncs.rosenbrock,
                  crossover_function=single_point_crossover,
@@ -128,9 +133,8 @@ class GenAlg:
         self.mutation_size = mutation_size
         self.generation_counter = 1
         self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
-        self.environment = env.Environment()
         self.verbose = verbose
-        if(self.verbose): print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
+        if self.verbose: print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
         # Calculate the starting cost of the population
         for agent in self.pop.pop:
             agent.update_cost(self.cost_function)
@@ -141,8 +145,8 @@ class GenAlg:
         # Print relevant information about Generation 0: [x,y], cost, and the gene with nums rounded to nearest int
         for agent in self.pop.pop:
             out = agent.get_output_params(2)
-            if(self.verbose): print(f"OUT:[%.2f,%.2f] COST: {agent.cost} GENE(rounded):{[int(i) for i in agent.gene]}" % (out[0], out[1]))
-        if(self.verbose): print("-----------------------------------------------")
+            if self.verbose: print(f"OUT:[%.2f,%.2f] COST: {agent.cost} GENE(rounded):{[int(i) for i in agent.gene]}" % (out[0], out[1]))
+        if self.verbose: print("-----------------------------------------------")
 
         # Run max_generations generations
         for gen_index in range(0, max_generations):
@@ -153,7 +157,7 @@ class GenAlg:
             # Calculate fitness/cost of every individual in the current generation
             for agent in self.pop.pop:
                 out = agent.get_output_params(2)
-                agent.cost = cost_function(out[0], out[1])
+                agent.cost = self.cost_function(out)
 
         # Sort by cost, ascending, and print minimal and average cost
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -193,13 +197,13 @@ class GenAlg:
         for i in range(0, elite_individuals):
             new_generation.append(self.pop.pop[i])
 
-        if(self.verbose): print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+        if self.verbose: print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals the new generation
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
             out = individual.get_output_params(2)
-            if(self.verbose): print(f"OUT:[%.2f,%.2f] COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}" % (out[0], out[1]))
+            if self.verbose: print(f"OUT:[%.2f,%.2f] COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}" % (out[0], out[1]))
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -208,7 +212,7 @@ class GenAlg:
         sumcost = 0
         for individual in self.pop.pop:
             sumcost += individual.cost
-        if(self.verbose):
+        if self.verbose:
             print("MIN COST:", self.pop.pop[0].cost, "AVG COST:", sumcost/len(self.pop.pop))
             out = self.pop.pop[0].get_output_params(2)
             print("[x,y] BEST: [%.2f,%.2f]" % (out[0], out[1]))
@@ -240,13 +244,13 @@ class GenAlg:
         for i in range(0, elite_individuals):
             new_generation.append(self.pop.pop[i])
 
-        if(self.verbose): print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+        if self.verbose: print(f"GEN {self.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals the new generation
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
             out = individual.get_output_params(2)
-            if(self.verbose): print(f"OUT:[%.2f,%.2f] COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}" % (out[0], out[1]))
+            if self.verbose: print(f"OUT:[%.2f,%.2f] COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}" % (out[0], out[1]))
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -255,7 +259,7 @@ class GenAlg:
         sumcost = 0
         for individual in self.pop.pop:
             sumcost += individual.cost
-        if(self.verbose):
+        if self.verbose:
             print("MIN COST:", self.pop.pop[0].cost, "AVG COST:", sumcost / len(self.pop.pop))
             out = self.pop.pop[0].get_output_params(2)
             print("[x,y] BEST: [%.2f,%.2f]" % (out[0], out[1]))

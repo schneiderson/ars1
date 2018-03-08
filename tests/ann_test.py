@@ -3,7 +3,7 @@ import numpy as np
 import ann_arrays as nn
 import numpy.testing as npt
 
-__author__ = 'Olve Drageset'
+__author__ = 'Olve Drageset, Andre Gramlich'
 
 
 class TestANN(unittest.TestCase):
