@@ -30,7 +30,6 @@ if __name__ == "__main__":
 
 
     def costfunc(gene):
-        environment = env.Environment()
         environment.simulate(True, 5, 5, weights=gene)
 
 
