@@ -173,7 +173,7 @@ class GenAlg:
 
         # Make offspring with some of the population. Save top individuals as elitism
         parent_individuals = min(self.pop_size, len(self.pop.pop))
-        elite_individuals = max(int(elite_rate * self.pop_size), 1)  # max(min(int(self.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
+        elite_individuals = min(int(elite_rate * self.pop_size), 1)  # max(min(int(self.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
