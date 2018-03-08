@@ -1,6 +1,7 @@
 ''' ROBOT MODULE '''
 import pygame
 import math
+from datetime import datetime
 from bot import robot as bot
 from bot import ann as ann
 
@@ -40,7 +41,9 @@ class Environment:
 
         self.frames = 0
         self.updates = 0
-        self.time = self.get_elapsed_time()
+        
+        self.time = 0                                   # time in milliseconds             
+        self.simulation_start_time = datetime.now()     # timestamp
 
     def __init__(self):
         self.pygame_initialized = False
@@ -87,7 +90,7 @@ class Environment:
         self.size = self.width, self.height = 1024, 768
         self.frames = 0
         self.updates = 0
-        self.time = self.get_elapsed_time()
+        self.simulation_start_time = datetime.now()
 
     def on_init(self):
         """
@@ -240,8 +243,8 @@ class Environment:
         """
             Returns the elapsed pygame time multiplied by the time dilation factor
         """
-
-        return int(pygame.time.get_ticks() * self.time_dilation)
+        elapsed_t = self.time_diff_ms( datetime.now(), self.simulation_start_time )
+        return int(elapsed_t * self.time_dilation)
 
     def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[]):
         """
@@ -266,7 +269,6 @@ class Environment:
             if self.on_init() == False:
                 self._running = False
 
-            start_time = self.get_elapsed_time()
             while self._running:
                 if graphics_enabled:
                     for event in pygame.event.get():
@@ -275,7 +277,7 @@ class Environment:
                 self.on_render()
 
                 if timeout > 0:
-                    if self.get_elapsed_time() - (timeout * 1000) > start_time:
+                    if self.time_diff_ms( datetime.now(), self.simulation_start_time ) > (timeout * 1000):
                         self._running = False
 
             # pygame.quit()
@@ -293,3 +295,9 @@ class Environment:
 
         # TODO: Test different fitness functions
         return self.cleaned
+
+
+    def time_diff_ms(self, time1, time2):
+        dt = time1 - time2
+        ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
+        return ms
