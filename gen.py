@@ -168,7 +168,7 @@ class GenAlg:
             sumcost += agent.cost
 
         print("MIN COST: ", self.pop.pop[0].cost, ", AVG COST:", sumcost/len(self.pop.pop))
-        print("[x,y] of min cost individual: ", self.pop.pop[0].get_output_params(2))
+        print("gene of min cost individual: ", self.pop.pop[0].gene)
 
     def reproduce(self, crossover_function, elite_rate):
 

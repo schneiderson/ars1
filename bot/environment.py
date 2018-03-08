@@ -14,12 +14,36 @@ WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
 
+
 class Environment:
     """
         The environment controls a single simulation (graphics are optional)
     """
 
+    def reset(self):
+        self._running = True
+        self._display_surf = None
+        self.graphics_enabled = True
+        self.time_dilation = 1  # Time dilation can be used to speed up or slow down simulation. All time interactions are multiplied by this factor. 1 = realtime
+
+        # self.robot = bot.Robot()
+        self.neural_net = None
+
+        self.velocity_base = 0.1
+        self.velocity_min = -1
+        self.velocity_max = 1
+
+        self.cleaned = 0
+        for index in range(self.grid_size):
+            row = [0] * self.grid_size
+            self.dirt[index] = row
+
+        self.frames = 0
+        self.updates = 0
+        self.time = self.get_elapsed_time()
+
     def __init__(self):
+        self.pygame_initialized = False
         self._running = True
         self._display_surf = None
         self.graphics_enabled = True
@@ -69,10 +93,10 @@ class Environment:
         """
             Initialize the simulation
         """
-
-        pygame.init()
-        if self.graphics_enabled: self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
-        self._running = True
+        if not self.pygame_initialized:
+            pygame.init()
+            if self.graphics_enabled: self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+            self._running = True
         self.robot.update_sensors(self.walls)
         self.on_render()
 
@@ -115,7 +139,7 @@ class Environment:
             if self.neural_net is not None:
                 inputs = []
                 for index, sensor in enumerate(self.robot.sensors):
-                    inputs.append( sensor[1] )
+                    inputs.append(sensor[1])
                 vel_lr = self.neural_net.get_velocities(inputs)
                 self.robot.set_velocity(vel_lr[0], vel_lr[1])
 
@@ -228,7 +252,7 @@ class Environment:
 
             Returns the fitness evaluation of the simulation (float) when the simluation is finished
         """
-
+        self.reset()
         try:
             # Apply configuration parameters
             self.time_dilation = time_dilation
@@ -254,7 +278,7 @@ class Environment:
                     if self.get_elapsed_time() - (timeout * 1000) > start_time:
                         self._running = False
 
-            pygame.quit()
+            # pygame.quit()
             return self.fitness()
         except Exception as inst:
             print('\033[91m' + "=== ERROR === Simulation failed with message: ")

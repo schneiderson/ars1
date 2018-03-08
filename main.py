@@ -30,7 +30,8 @@ if __name__ == "__main__":
 
 
     def costfunc(gene):
-        environment.simulate(True, 1, 10, weights=gene)
+        environment = env.Environment()
+        environment.simulate(True, 5, 5, weights=gene)
 
 
     # Simulate a 90 second game at x1000 speed without graphics

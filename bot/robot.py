@@ -27,7 +27,7 @@ class Robot:
         """
         self.sensor_max = 500
         self.dist_transformation_factor = 2
-        self.sensors = [(0, 0, (self.posx,self.posy))] * 12
+        self.sensors = [(0, 0, (self.posx, self.posy))] * 12
 
     def set_robot_position(self, x, y, angle):
         self.posx = x
