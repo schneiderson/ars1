@@ -28,6 +28,7 @@ class Robot:
         self.sensor_max = 500
         self.dist_transformation_factor = 2
         self.sensors = [(0, 0, (self.posx, self.posy))] * 12
+        self.num_collisions = 0
 
     def reset(self):
         self.posx = self.initial_posx
@@ -36,6 +37,9 @@ class Robot:
 
         self.vel_left = 0
         self.vel_right = 0
+
+        self.sensors = [(0, 0, (self.posx, self.posy))] * 12
+        self.num_collisions = 0
 
     def set_robot_initial_position(self, x, y, angle):
         self.initial_posx = x
@@ -101,12 +105,15 @@ class Robot:
         
             # Handle wall collisions, apply motion only parallel to wall, rest motion perpendicular to wall
             if closest_collision < self.radius - COLLISION_TOLERANCE:
+                self.num_collisions += 1
+
                 # The robot is moved back along the angle of the current (infringing) sensor using the illegal distance
                 illegal_distance = (self.radius - closest_collision) + self.radius
                 corrected_position = sensor_end[0] - illegal_distance * math.cos(theta_rad), \
                                      sensor_end[1] - illegal_distance * math.sin(theta_rad)
                 self.set_robot_position(corrected_position[0], corrected_position[1], self.angle)
-            
+
+                # Restart sensor update to find potential sensors that might conflict with the new position
                 self.update_sensors(walls)
             
                 # TODO: motion parallel from wall continues normally, but should be slown down by a weight to discourage 'pushing' the wall

@@ -212,7 +212,10 @@ class Environment:
                  "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
                  "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
                  "",
-                 "Cleaned: " + str(self.cleaned),
+                 "Fitness:",
+                 "  Cleaned: " + str(self.cleaned),
+                 "  Collisions: " + str(self.robot.num_collisions),
+                 "  Evaluation: " + str(self.fitness()),
                  "",
                  "Genetic algorithm: ",
                  "   Current generation: ",
@@ -358,7 +361,8 @@ class Environment:
         """
 
         # TODO: Test different fitness functions
-        return self.cleaned
+        # return self.cleaned  # Basic distance travelled
+        return self.cleaned / (1+self.robot.num_collisions) # Basic distance travelled + low num_collisions is rewarded
 
 
     def time_diff_ms(self, time1, time2):
