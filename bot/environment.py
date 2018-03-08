@@ -113,9 +113,9 @@ class Environment:
 
             # Get a new move from the neural net if it was initialized
             if self.neural_net is not None:
-                inputs = [] * len(self.robot.sensors)
+                inputs = []
                 for index, sensor in enumerate(self.robot.sensors):
-                    inputs[index] = sensor[1]
+                    inputs.append( sensor[1] )
                 vel_lr = self.neural_net.get_velocities(inputs)
                 self.robot.set_velocity(vel_lr[0], vel_lr[1])
 
