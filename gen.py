@@ -90,7 +90,7 @@ class Individual:
 
 class Population:
     def __init__(self,
-                 pop_size=5,
+                 pop_size=20,
                  gene_length=5,
                  value_range=[-5, 5],
                  init_near_zero=False):
@@ -117,7 +117,7 @@ class GenAlg:
     def __init__(self,
                  cost_function=costfuncs.rosenbrock,
                  crossover_function=single_point_crossover,
-                 pop_size=5,
+                 pop_size=20,
                  gene_length=5,
                  mutation_rate=0.1,  # What is the probability of a gene mutating
                  mutation_size=0.5,  # How large is the change in a value upon mutation
@@ -172,7 +172,8 @@ class GenAlg:
     def reproduce(self, crossover_function, elite_rate):
 
         # Make offspring with some of the population. Save top individuals as elitism
-        parent_individuals = min(self.pop_size, len(self.pop.pop))
+        parent_rate = 0.75
+        parent_individuals = int(self.pop_size * parent_rate)
         elite_individuals = min(int(elite_rate * self.pop_size), 1)  # max(min(int(self.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
 
         # Sort by cost, ascending
@@ -184,6 +185,7 @@ class GenAlg:
             mut_rate = self.mutation_rate * math.log(i+2, 2)  # Less fit -> mutate more
             mut_size = self.mutation_size + (1-self.mutation_size)/parent_individuals * i  # Less fit -> mutate more
             nr_of_children = 3 - max(int(round(i/(parent_individuals*0.333))), 2)  # Less fit -> less children
+            nr_of_children = math.ceil(1/parent_rate)
             # Generate a fitness-appropriate amount of offspring
             for j in range(0, nr_of_children):
                 # Create children with a crossover function
@@ -212,8 +214,8 @@ class GenAlg:
         for individual in self.pop.pop:
             sumcost += individual.cost
         if self.verbose:
-            print("MIN COST:", self.pop.pop[0].cost, "AVG COST:", sumcost/len(self.pop.pop))
-            print("BEST GENE: ", self.pop.pop[0].gene)
+            print(f"MIN COST:{self.pop.pop[0].cost} AVG COST: {sumcost/len(self.pop.pop)}")
+            print(f"BEST GENE: {self.pop.pop[0].gene}")
             print(f"END GEN {self.generation_counter}-----------------------------------------------")
         return new_generation
 
