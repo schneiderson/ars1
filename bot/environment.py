@@ -5,7 +5,7 @@ from datetime import datetime
 from bot import robot as bot
 from bot import ann as ann
 
-__author__ = 'Steffen Schneider, Camiel Kerkhofs'
+__author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
 pygame.font.init()
 game_font = pygame.font.SysFont('arial', 16)
@@ -261,7 +261,7 @@ class Environment:
             self.time_dilation = time_dilation
             self.graphics_enabled = graphics_enabled
             if len(weights) > 0:
-                self.neural_net = ann.ANN(weights)
+                self.neural_net = ann.NeuralNet(weights)
             else:
                 # Just use some sample velocity in case weights are missing
                 self.robot.set_velocity(0.65, 0.5)
@@ -283,6 +283,12 @@ class Environment:
             # pygame.quit()
             return self.fitness()
         except IndexError as inst:
+            print('\033[91m' + "=== ERROR === Simulation failed with message: ")
+            print(inst)
+            print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
+            print('\033[0m' + "\n")
+            return 0
+        except Exception as inst:
             print('\033[91m' + "=== ERROR === Simulation failed with message: ")
             print(inst)
             print('\033[0m' + "\n")

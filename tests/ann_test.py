@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import ann_arrays as nn
+from bot import ann as nn
 import numpy.testing as npt
 
 __author__ = 'Olve Drageset, Andre Gramlich'

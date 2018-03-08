@@ -1,7 +1,5 @@
 import random
 import math
-import costfuncs
-import bot.environment as env
 
 
 __author__ = "Olve Drageset"
@@ -115,7 +113,7 @@ class Population:
 class GenAlg:
 
     def __init__(self,
-                 cost_function=costfuncs.rosenbrock,
+                 cost_function=None,
                  crossover_function=single_point_crossover,
                  pop_size=20,
                  gene_length=5,
