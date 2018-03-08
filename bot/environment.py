@@ -280,7 +280,7 @@ class Environment:
 
             # pygame.quit()
             return self.fitness()
-        except Exception as inst:
+        except IndexError as inst:
             print('\033[91m' + "=== ERROR === Simulation failed with message: ")
             print(inst)
             print('\033[0m' + "\n")
