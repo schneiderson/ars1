@@ -1,4 +1,5 @@
 ''' ROBOT MODULE '''
+import numpy as np
 import pygame
 import math
 from datetime import datetime
@@ -35,7 +36,6 @@ class Environment:
         # reset bot
         self.robot.reset()
         self.neural_net = None
-        self.recurrence = False
 
         # Reset the dust grid
         self.cleaned = 0
@@ -59,7 +59,6 @@ class Environment:
 
         self.robot = bot.Robot()
         self.neural_net = None
-        self.recurrence = False
 
         self.velocity_base = 0.1
         self.velocity_min = -1
@@ -174,8 +173,11 @@ class Environment:
             self.robot.move_robot(delta_time)
 
             # Update robot sensors
-            self.robot.update_sensors(self.walls)
+            closest_activation = self.robot.update_sensors(self.walls)
+            max_activation = self.robot.max_activation
+            norm = closest_activation / max_activation
 
+            dirt_value = 5 * norm
             self.dirt_sensor = 0
             # Update dirt
             dirt_i = int(self.robot.posx / (self.width / self.grid_size))
@@ -183,17 +185,17 @@ class Environment:
             for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) - 1):
                 for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
                     if self.dirt[dirt_j - n][dirt_i - m] == 0:
-                        self.dirt[dirt_j - n][dirt_i - m] = 1
-                        self.dirt_sensor += 1
+                        self.dirt[dirt_j - n][dirt_i - m] = dirt_value
+                        self.dirt_sensor += dirt_value
                     if self.dirt[dirt_j + n][dirt_i + m] == 0:
-                        self.dirt[dirt_j + n][dirt_i + m] = 1
-                        self.dirt_sensor += 1
+                        self.dirt[dirt_j + n][dirt_i + m] = dirt_value
+                        self.dirt_sensor += dirt_value
                     if self.dirt[dirt_j - n][dirt_i + m] == 0:
-                        self.dirt[dirt_j - n][dirt_i + m] = 1
-                        self.dirt_sensor += 1
+                        self.dirt[dirt_j - n][dirt_i + m] = dirt_value
+                        self.dirt_sensor += dirt_value
                     if self.dirt[dirt_j + n][dirt_i - m] == 0:
-                        self.dirt[dirt_j + n][dirt_i - m] = 1
-                        self.dirt_sensor += 1
+                        self.dirt[dirt_j + n][dirt_i - m] = dirt_value
+                        self.dirt_sensor += dirt_value
             self.cleaned += self.dirt_sensor
 
     def on_render(self):
@@ -206,7 +208,49 @@ class Environment:
 
         self.frames += 1
 
-        debug = ["Debug info:",
+        debug = self.get_debug_output()
+        
+        # Clean display
+        self._display_surf.fill(GRAY)
+
+        # Draw dirt
+        for index_row, dirt_row in enumerate(self.dirt):
+            tile_height = self.height / self.grid_size
+            y_offset = tile_height * index_row
+            for index_column, dirt_column in enumerate(dirt_row):
+                if dirt_column > 0:
+                    tile_width = self.width / self.grid_size
+                    x_offset = tile_width * index_column
+                    pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
+
+        # Draw walls
+        for w in self.walls:
+            pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
+
+        # Draw sensors
+        robot_pos = (int(self.robot.posx), int(self.robot.posy))
+        for index, sensor in enumerate(self.robot.sensors):
+            pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
+            textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
+            self._display_surf.blit(textsurface, sensor[2])
+
+        # Draw the robot
+        pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
+        theta_rad = math.radians(self.robot.angle)
+        robot_head = \
+            self.robot.posx + self.robot.radius * math.cos(theta_rad), \
+            self.robot.posy + self.robot.radius * math.sin(theta_rad)
+        pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
+
+        # Draw debug metrics
+        for index, info in enumerate(debug):
+            self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
+
+        # Update display
+        pygame.display.update()
+
+    def get_debug_output(self):
+        return ["Debug info:",
                  "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
                  "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
                  "Time dilation: * " + str(self.time_dilation),
@@ -238,45 +282,6 @@ class Environment:
                  "      Avg cost: " + str(gen.GenAlg.avg_cost),
                  ""]
 
-        # Clean display
-        self._display_surf.fill(GRAY)
-
-        # Draw dirt
-        for index_row, dirt_row in enumerate(self.dirt):
-            tile_height = self.height / self.grid_size
-            y_offset = tile_height * index_row
-            for index_column, dirt_column in enumerate(dirt_row):
-                if dirt_column == 1:
-                    tile_width = self.width / self.grid_size
-                    x_offset = tile_width * index_column
-                    pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
-
-        # Draw walls
-        for w in self.walls:
-            pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
-
-        # Draw sensors
-        robot_pos = (int(self.robot.posx), int(self.robot.posy))
-        for index, sensor in enumerate(self.robot.sensors):
-            pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
-            textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
-            self._display_surf.blit(textsurface, sensor[2])
-
-        # Draw the robot
-        pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
-        theta_rad = math.radians(self.robot.angle)
-        robot_head = \
-            self.robot.posx + self.robot.radius * math.cos(theta_rad), \
-            self.robot.posy + self.robot.radius * math.sin(theta_rad)
-        pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
-
-        # Draw debug metrics
-        for index, info in enumerate(debug):
-            self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
-
-        # Update display
-        pygame.display.update()
-
     def get_elapsed_time(self, realtime=False):
         """
             Returns the elapsed time in milliseconds multiplied by the time dilation factor
@@ -293,7 +298,7 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -305,11 +310,10 @@ class Environment:
         """
         try:
             self.reset()
-            self.recurrence = recurrence
             # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
             if len(weights) > 0:
-                self.neural_net = ann.NeuralNet(weights, recurrence=self.recurrence)
+                self.neural_net = ann.NeuralNet(weights, recurrence=recurrence)
             else:
                 # Just use some sample velocity in case weights are missing (demo mode)
                 # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
@@ -322,6 +326,9 @@ class Environment:
                     if static_delta_t > 200:
                         raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
                     self.static_time_mode_delta_t = static_delta_t
+
+            if start_x != 0 and start_y != 0:
+                self.robot.set_robot_position(start_x, start_y, start_angle)
 
             if self.on_init() == False:
                 # Has no return value but will return False if pygame library encounters an internal error
@@ -365,8 +372,8 @@ class Environment:
         """
 
         # TODO: Test different fitness functions
-        # return self.cleaned  # Basic distance travelled
-        return self.cleaned / (1+self.robot.num_collisions) # Basic distance travelled + low num_collisions is rewarded
+        return self.cleaned  # Basic distance travelled
+        # return self.cleaned / (1+self.robot.num_collisions) # Basic distance travelled + low num_collisions is rewarded
 
 
     def time_diff_ms(self, time1, time2):

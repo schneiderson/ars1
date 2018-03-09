@@ -29,6 +29,7 @@ class Robot:
         self.dist_transformation_factor = 2
         self.sensors = [(0, 0, (self.posx, self.posy))] * 12
         self.num_collisions = 0
+        self.max_activation = self.sensor_max ** self.dist_transformation_factor
 
     def reset(self):
         self.posx = self.initial_posx
@@ -75,7 +76,8 @@ class Robot:
         """
             Update all infrared sensor values given a set of bounding lines (walls)
         """
-    
+
+        closest_transformed = 0
         for index, sensor in enumerate(self.sensors):
             # Determine current sensor endpoint
             closest_collision = self.sensor_max
@@ -102,6 +104,8 @@ class Robot:
             # Transform linear distance measure and update sensor value
             transformed_distance = (self.sensor_max - closest_collision) ** self.dist_transformation_factor
             self.sensors[index] = [closest_collision, transformed_distance, sensor_end]
+            if transformed_distance > closest_transformed:
+                closest_transformed = transformed_distance
         
             # Handle wall collisions, apply motion only parallel to wall, rest motion perpendicular to wall
             if closest_collision < self.radius - COLLISION_TOLERANCE:
@@ -120,6 +124,7 @@ class Robot:
                 # xDiff = intersect_wall[1][0] - intersect_wall[0][0]
                 # yDiff = intersect_wall[1][1] - intersect_wall[0][1]
                 # wall_angle = math.degrees(math.atan2(yDiff, xDiff))
+        return closest_transformed
                 
     def find_line_intersect(self, a_p1, a_p2, b_p1, b_p2):
         """
