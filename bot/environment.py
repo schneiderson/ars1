@@ -376,6 +376,8 @@ class Environment:
         """
         # v = abs((self.robot.vel_left+self.robot.vel_right)/2)
         # delta_v = abs(self.robot.vel_left-self.robot.vel_right)
+        # v*(1-math.sqrt(delta_v))*i
+        
         # Simple fitness: total number of dust collected
         # return self.cleaned
 
