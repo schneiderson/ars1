@@ -206,7 +206,14 @@ class GenAlg:
 
         # Elitism: Keep the top individuals.
         for i in range(0, elite_individuals):
-            new_generation.append(self.pop.pop[i])
+            # If new_generation does not contain an individual with same gene as self.pop.pop[i]
+            # Add self.pop.pop[i] to new generation
+            copy = False
+            for individual in new_generation:
+                if individual.gene == self.pop.pop[i].gene:
+                    copy = True
+            if not copy:
+                new_generation.append(self.pop.pop[i])
 
         GenAlg.pop_size_current = len(new_generation)
         if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
