@@ -155,7 +155,7 @@ class Environment:
             # Calculate time since last frame
             current_time = self.get_elapsed_time()
             delta_time = current_time - self.time
-            if delta_time - 10 > 0:
+            if delta_time - 150 > 0:
                 update = True
                 self.time = current_time
 
@@ -374,23 +374,33 @@ class Environment:
         """
             Returns the current fitness evaluation of the simulation (float)
         """
-        # v = abs((self.robot.vel_left+self.robot.vel_right)/2)
-        # delta_v = abs(self.robot.vel_left-self.robot.vel_right)
-        # v*(1-math.sqrt(delta_v))*i
-        
+
         # Simple fitness: total number of dust collected
         # return self.cleaned
 
         # Total number of dust collected devided by the number of collisions
         # return self.cleaned / (1+self.robot.num_collisions)
 
-        # Total number of dust collected
+        # Total number of dust collected * sensor activation / num collisions
+        # if len(self.activations) > 0:
+        #     total = 0
+        #     for i in self.activations:
+        #         total += i
+        #     avg = total / len(self.activations)
+        #     return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
+        # else:
+        #     return self.cleaned / (1+(self.robot.num_collisions * 0.3))
+
+        # Wheel activation (from slides)
         if len(self.activations) > 0:
             total = 0
-            for i in self.activations:
-                total += i
-            avg = total / len(self.activations)
-            return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
+            for n in self.activations:
+                total += n
+            i = total / len(self.activations)
+
+            v = abs((self.robot.vel_left+self.robot.vel_right)/2)
+            delta_v = abs(self.robot.vel_left-self.robot.vel_right)
+            return v*(1-math.sqrt(delta_v))*i
         else:
             return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
