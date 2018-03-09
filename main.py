@@ -49,15 +49,19 @@ if __name__ == "__main__":
     # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
     # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
 
+    recurrence = False
+
     # Start the genetic algorithm
     def costfunc(gene):
-        return -environment.simulate(True, 0, 30, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
+        return -environment.simulate(True, 0, 30, weights=gene, static_delta_t=200, recurrence=recurrence)  # Return minus to convert fitness to cost
+
+    
 
     gene_length = num_of_weights(nr_of_input_nodes=13,
                                  nr_of_hidden_layers=1,
                                  nr_of_hidden_layer_nodes=6,
                                  nr_of_output_nodes=2,
-                                 recurrence=True)
+                                 recurrence=recurrence)
 
     genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length)
 

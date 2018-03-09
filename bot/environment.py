@@ -35,6 +35,7 @@ class Environment:
         # reset bot
         self.robot.reset()
         self.neural_net = None
+        self.recurrence = False
 
         # Reset the dust grid
         self.cleaned = 0
@@ -58,6 +59,7 @@ class Environment:
 
         self.robot = bot.Robot()
         self.neural_net = None
+        self.recurrence = False
 
         self.velocity_base = 0.1
         self.velocity_min = -1
@@ -291,7 +293,7 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -303,11 +305,11 @@ class Environment:
         """
         try:
             self.reset()
-
+            self.recurrence = recurrence
             # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
             if len(weights) > 0:
-                self.neural_net = ann.NeuralNet(weights)
+                self.neural_net = ann.NeuralNet(weights, recurrence=self.recurrence)
             else:
                 # Just use some sample velocity in case weights are missing (demo mode)
                 # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
