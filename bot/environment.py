@@ -38,6 +38,7 @@ class Environment:
 
         # Reset the dust grid
         self.cleaned = 0
+        self.dirt_sensor = 0
         for index in range(self.grid_size):
             row = [0] * self.grid_size
             self.dirt[index] = row
@@ -84,6 +85,7 @@ class Environment:
         # cell value 1 means the robot has not been there (clean)
         self.grid_size = 128  # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
         self.cleaned = 0
+        self.dirt_sensor = 0
         self.dirt = [0] * self.grid_size
         for index in range(self.grid_size):
             row = [0] * self.grid_size
@@ -162,6 +164,7 @@ class Environment:
                 inputs = []
                 for index, sensor in enumerate(self.robot.sensors):
                     inputs.append(sensor[1])
+                inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
                 vel_lr = self.neural_net.get_velocities(inputs)
                 self.robot.set_velocity(vel_lr[0], vel_lr[1])
 
@@ -171,6 +174,7 @@ class Environment:
             # Update robot sensors
             self.robot.update_sensors(self.walls)
 
+            self.dirt_sensor = 0
             # Update dirt
             dirt_i = int(self.robot.posx / (self.width / self.grid_size))
             dirt_j = int(self.robot.posy / (self.height / self.grid_size))
@@ -178,16 +182,17 @@ class Environment:
                 for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
                     if self.dirt[dirt_j - n][dirt_i - m] == 0:
                         self.dirt[dirt_j - n][dirt_i - m] = 1
-                        self.cleaned += 1
+                        self.dirt_sensor += 1
                     if self.dirt[dirt_j + n][dirt_i + m] == 0:
                         self.dirt[dirt_j + n][dirt_i + m] = 1
-                        self.cleaned += 1
+                        self.dirt_sensor += 1
                     if self.dirt[dirt_j - n][dirt_i + m] == 0:
                         self.dirt[dirt_j - n][dirt_i + m] = 1
-                        self.cleaned += 1
+                        self.dirt_sensor += 1
                     if self.dirt[dirt_j + n][dirt_i - m] == 0:
                         self.dirt[dirt_j + n][dirt_i - m] = 1
-                        self.cleaned += 1
+                        self.dirt_sensor += 1
+            self.cleaned += self.dirt_sensor
 
     def on_render(self):
         """
@@ -341,7 +346,7 @@ class Environment:
             #pygame.quit()
             return self.fitness()
         except IndexError as inst:
-            print('\033[91m' + "=== ERROR === Simulation failed with message: ")
+            print('\033[91m' + "=== INDEX ERROR === Simulation failed with message: ")
             print(inst)
             if self.static_time_mode:
                 print("This error is likely caused by the robot going off screen. Try lowering the static delta_time")
@@ -349,11 +354,11 @@ class Environment:
                 print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
             print('\033[0m' + "\n")
             return 0
-        except Exception as inst:
-            print('\033[91m' + "=== ERROR === Simulation failed with message: ")
-            print(inst)
-            print('\033[0m' + "\n")
-            return 0
+        # except Exception as inst:
+        #     print('\033[91m' + "=== ERROR === Simulation failed with message: ")
+        #     print(inst)
+        #     print('\033[0m' + "\n")
+        #     return 0
 
     def fitness(self):
         """
