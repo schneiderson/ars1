@@ -199,6 +199,9 @@ class Environment:
             print debug information and render the graphics if they are enabled
         """
 
+        if not self.graphics_enabled:
+            return True
+
         self.frames += 1
 
         debug = ["Debug info:",
@@ -232,51 +235,45 @@ class Environment:
                  "      Best cost: " + str(gen.GenAlg.best_cost),
                  "      Avg cost: " + str(gen.GenAlg.avg_cost),
                  ""]
-        if not self.graphics_enabled:
-            # Prints the debug information to the console every 2 seconds (realtime)
-            if self.get_elapsed_time(realtime=True) % 2000 == 0:
-                print("\n" * 10)
-                for index, info in enumerate(debug):
-                    print(info)
-        else:
-            # Clean display
-            self._display_surf.fill(GRAY)
 
-            # Draw dirt
-            for index_row, dirt_row in enumerate(self.dirt):
-                tile_height = self.height / self.grid_size
-                y_offset = tile_height * index_row
-                for index_column, dirt_column in enumerate(dirt_row):
-                    if dirt_column == 1:
-                        tile_width = self.width / self.grid_size
-                        x_offset = tile_width * index_column
-                        pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
+        # Clean display
+        self._display_surf.fill(GRAY)
 
-            # Draw walls
-            for w in self.walls:
-                pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
+        # Draw dirt
+        for index_row, dirt_row in enumerate(self.dirt):
+            tile_height = self.height / self.grid_size
+            y_offset = tile_height * index_row
+            for index_column, dirt_column in enumerate(dirt_row):
+                if dirt_column == 1:
+                    tile_width = self.width / self.grid_size
+                    x_offset = tile_width * index_column
+                    pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
 
-            # Draw sensors
-            robot_pos = (int(self.robot.posx), int(self.robot.posy))
-            for index, sensor in enumerate(self.robot.sensors):
-                pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
-                textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
-                self._display_surf.blit(textsurface, sensor[2])
+        # Draw walls
+        for w in self.walls:
+            pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
 
-            # Draw the robot
-            pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
-            theta_rad = math.radians(self.robot.angle)
-            robot_head = \
-                self.robot.posx + self.robot.radius * math.cos(theta_rad), \
-                self.robot.posy + self.robot.radius * math.sin(theta_rad)
-            pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
+        # Draw sensors
+        robot_pos = (int(self.robot.posx), int(self.robot.posy))
+        for index, sensor in enumerate(self.robot.sensors):
+            pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
+            textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
+            self._display_surf.blit(textsurface, sensor[2])
 
-            # Draw debug metrics
-            for index, info in enumerate(debug):
-                self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
+        # Draw the robot
+        pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
+        theta_rad = math.radians(self.robot.angle)
+        robot_head = \
+            self.robot.posx + self.robot.radius * math.cos(theta_rad), \
+            self.robot.posy + self.robot.radius * math.sin(theta_rad)
+        pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
 
-            # Update display
-            pygame.display.update()
+        # Draw debug metrics
+        for index, info in enumerate(debug):
+            self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
+
+        # Update display
+        pygame.display.update()
 
     def get_elapsed_time(self, realtime=False):
         """
