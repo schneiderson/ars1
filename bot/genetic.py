@@ -126,9 +126,9 @@ class GenAlg:
                  crossover_function=single_point_crossover,
                  pop_size=20,
                  gene_length=5,
-                 mutation_rate=0.1,  # What is the probability of a gene mutating
-                 mutation_size=0.5,  # How large is the change in a value upon mutation
-                 elite_rate=0.05,  # How large a piece of the population is kept as elitism
+                 mutation_rate=0.1,  # What is the probability of a gene mutating, [0,1]
+                 mutation_size=0.5,  # How large is the change in a value upon mutation [0,1]
+                 elite_rate=0.05,  # How large a piece of the population is kept as elitism [0,1]
                  max_generations=20,
                  value_range=[-5, 5],
                  init_near_zero=False,

@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # Start the genetic algorithm
     def costfunc(gene):
-        return -environment.simulate(True, 0, 30, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
+        return -environment.simulate(False, 0, 90, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
 
     gene_length = num_of_weights(nr_of_input_nodes=13,
                                  nr_of_hidden_layers=1,
@@ -59,5 +59,5 @@ if __name__ == "__main__":
                                  nr_of_output_nodes=2,
                                  recurrence=True)
 
-    genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length)
+    genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, pop_size=30)
 
