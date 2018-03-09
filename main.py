@@ -3,8 +3,8 @@ from bot import genetic as gen
 
 
 def num_of_weights(nr_of_input_nodes=13,
-                   nr_of_hidden_layers=1,
-                   nr_of_hidden_layer_nodes=6,
+                   nr_of_hidden_layers=0,
+                   nr_of_hidden_layer_nodes=0,
                    nr_of_output_nodes=2,
                    recurrence=True):
     nr_of_edges = 0
@@ -45,37 +45,19 @@ if __name__ == "__main__":
     # Simulate a 90 second game at x20 speed without graphics
     # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
 
-
-    recurrence = True
-
     # Load weights from a previous simulation:
-    # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
-    weights = load_weights_from_file('weights/saved/90sec_3pos_dt200_simplecost/gen20_cost-41615_avg-41615')
-    print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
+    # weights = load_weights_from_file('weights\weights_20180309-130801\gen20_cost-1671_avg-1671')
+    # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
 
     # Start the genetic algorithm
     def costfunc(gene):
-        cost = 0
-        graphics = False
-        time_dilation = 0
-        simulation_time = 90
-        delta_t = 200
-        cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=400, start_y=175, start_angle=0)  # Start in the middle
-        cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=80, start_y=80, start_angle=45)  # Start in corner
-        cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=80, start_y=400, start_angle=90)  # Start next to a wall
-        return cost
-
-
-    # Start the genetic algorithm
-    def costfunc(gene):
-        return -environment.simulate(False, 0, 30, weights=gene, static_delta_t=200, recurrence=recurrence)  # Return minus to convert fitness to cost
-
+        return -environment.simulate(False, 0, 30, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
 
     gene_length = num_of_weights(nr_of_input_nodes=13,
-                                 nr_of_hidden_layers=1,
-                                 nr_of_hidden_layer_nodes=6,
+                                 nr_of_hidden_layers=0,
+                                 nr_of_hidden_layer_nodes=0,
                                  nr_of_output_nodes=2,
-                                 recurrence=recurrence)
+                                 recurrence=True)
 
-    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True)
+    genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length)
 

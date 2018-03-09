@@ -162,3 +162,6 @@ class Robot:
         if y > max(b_p1[1], b_p2[1]) + COLLISION_TOLERANCE: return False
     
         return x, y
+
+    def get_sensors(self):
+        return [self.sensors[0[1]], ]
