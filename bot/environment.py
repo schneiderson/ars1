@@ -199,6 +199,9 @@ class Environment:
             print debug information and render the graphics if they are enabled
         """
 
+        if not self.graphics_enabled:
+            return True
+
         self.frames += 1
 
         debug = ["Debug info:",
@@ -232,13 +235,13 @@ class Environment:
                  "      Best cost: " + str(gen.GenAlg.best_cost),
                  "      Avg cost: " + str(gen.GenAlg.avg_cost),
                  ""]
-        if not self.graphics_enabled:
-            # Prints the debug information to the console every 2 seconds (realtime)
-            if self.get_elapsed_time(realtime=True) % 2000 == 0:
-                print("\n" * 10)
-                for index, info in enumerate(debug):
-                    print(info)
-        else:
+        # if not self.graphics_enabled:
+        #     # Prints the debug information to the console every 2 seconds (realtime)
+        #     if self.get_elapsed_time(realtime=True) % 2000 == 0:
+        #         print("\n" * 10)
+        #         for index, info in enumerate(debug):
+        #             print(info)
+        # else:
             # Clean display
             self._display_surf.fill(GRAY)
 
