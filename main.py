@@ -45,18 +45,17 @@ if __name__ == "__main__":
     # Simulate a 90 second game at x20 speed without graphics
     # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
 
-
     recurrence = True
 
     # Load weights from a previous simulation:
     # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
-    # weights = load_weights_from_file('weights/weights_20180309-141037/gen4_cost-10420_avg-2869')
-    # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
+    # weights = load_weights_from_file('weights/saved/90sec_3pos_dt200_simplecost/gen20_cost-41615_avg-41615')
+    # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=100, recurrence=True)))
 
     # Start the genetic algorithm
     def costfunc(gene):
         cost = 0
-        graphics = False
+        graphics = True
         time_dilation = 0
         simulation_time = 90
         delta_t = 200

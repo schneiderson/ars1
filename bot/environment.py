@@ -40,6 +40,7 @@ class Environment:
         # Reset the dust grid
         self.cleaned = 0
         self.dirt_sensor = 0
+        self.activations = []
         for index in range(self.grid_size):
             row = [0] * self.grid_size
             self.dirt[index] = row
@@ -87,6 +88,7 @@ class Environment:
         self.grid_size = 128  # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
         self.cleaned = 0
         self.dirt_sensor = 0
+        self.activations = []
         self.dirt = [0] * self.grid_size
         for index in range(self.grid_size):
             row = [0] * self.grid_size
@@ -176,6 +178,7 @@ class Environment:
             closest_activation = self.robot.update_sensors(self.walls)
             max_activation = self.robot.max_activation
             norm = closest_activation / max_activation
+            self.activations.append(norm)
 
             dirt_value = 5 * norm
             self.dirt_sensor = 0
@@ -269,6 +272,7 @@ class Environment:
                  "Fitness:",
                  "  Cleaned: " + str(self.cleaned),
                  "  Collisions: " + str(self.robot.num_collisions),
+                 "  Activations: " + str(len(self.activations)),
                  "  Evaluation: " + str(self.fitness()),
                  "",
                  "Genetic algorithm: ",
@@ -371,10 +375,21 @@ class Environment:
             Returns the current fitness evaluation of the simulation (float)
         """
 
-        # TODO: Test different fitness functions
-        return self.cleaned  # Basic distance travelled
-        # return self.cleaned / (1+self.robot.num_collisions) # Basic distance travelled + low num_collisions is rewarded
+        # Simple fitness: total number of dust collected
+        # return self.cleaned
 
+        # Total number of dust collected devided by the number of collisions
+        # return self.cleaned / (1+self.robot.num_collisions)
+
+        # Total number of dust collected
+        if len(self.activations) > 0:
+            total = 0
+            for i in self.activations:
+                total += i
+            avg = total / len(self.activations)
+            return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
+        else:
+            return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
     def time_diff_ms(self, time1, time2):
         dt = time1 - time2
