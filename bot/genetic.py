@@ -212,9 +212,9 @@ class GenAlg:
         if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals in the new generation
-        # for individual in self.pop.pop:
-        #     individual.update_cost(self.cost_function)
-        #     if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
+        for individual in self.pop.pop:
+            individual.update_cost(self.cost_function)
+            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
