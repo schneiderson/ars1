@@ -153,7 +153,6 @@ class GenAlg:
 
         # Print relevant information about Generation 0: [x,y], cost, and the gene with nums rounded to nearest int
         for agent in self.pop.pop:
-            out = agent.get_output_params(2)
             if self.verbose: print(f"COST: {agent.cost} GENE(rounded):{[int(i) for i in agent.gene]}")
         if self.verbose: print("-----------------------------------------------")
 
@@ -165,9 +164,9 @@ class GenAlg:
             self.pop.pop = self.reproduce(crossover_function, elite_rate)
 
             # Calculate fitness/cost of every individual in the current generation
-            for agent in self.pop.pop:
-                GenAlg.gen_progress += 1
-                agent.cost = self.cost_function(agent.gene)
+            # for agent in self.pop.pop:
+            #     GenAlg.gen_progress += 1
+            #     agent.cost = self.cost_function(agent.gene)
 
         # Sort by cost, ascending, and print minimal and average cost
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -212,11 +211,10 @@ class GenAlg:
         GenAlg.pop_size_current = len(new_generation)
         if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
-        # Calculate the cost of individuals the new generation
-        for individual in self.pop.pop:
-            individual.update_cost(self.cost_function)
-            out = individual.get_output_params(2)
-            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
+        # Calculate the cost of individuals in the new generation
+        # for individual in self.pop.pop:
+        #     individual.update_cost(self.cost_function)
+        #     if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -269,7 +267,7 @@ class GenAlg:
         if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Calculate the cost of individuals the new generation
-        for individual in self.pop.pop:
+        for individual in new_generation:
             individual.update_cost(self.cost_function)
             if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
