@@ -208,38 +208,8 @@ class Environment:
 
         self.frames += 1
 
-        debug = ["Debug info:",
-                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
-                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
-                 "Time dilation: * " + str(self.time_dilation),
-                 "Frames: " + str(self.frames),
-                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "Updates: " + str(self.updates),
-                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "",
-                 "Robot:",
-                 "  Angle: " + str(int(self.robot.angle)),
-                 "  Pos_x: " + str(int(self.robot.posx)),
-                 "  Pos_y: " + str(int(self.robot.posy)),
-                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
-                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
-                 "",
-                 "Fitness:",
-                 "  Cleaned: " + str(self.cleaned),
-                 "  Collisions: " + str(self.robot.num_collisions),
-                 "  Evaluation: " + str(self.fitness()),
-                 "",
-                 "Genetic algorithm: ",
-                 "   Current generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter),
-                 "      Size: " + str(gen.GenAlg.pop_size_current),
-                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
-                 "   Last generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
-                 "      Best cost: " + str(gen.GenAlg.best_cost),
-                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
-                 ""]
-
+        debug = self.get_debug_output()
+        
         # Clean display
         self._display_surf.fill(GRAY)
 
@@ -279,6 +249,39 @@ class Environment:
         # Update display
         pygame.display.update()
 
+    def get_debug_output(self):
+        return ["Debug info:",
+                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
+                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
+                 "Time dilation: * " + str(self.time_dilation),
+                 "Frames: " + str(self.frames),
+                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                 "Updates: " + str(self.updates),
+                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                 "",
+                 "Robot:",
+                 "  Angle: " + str(int(self.robot.angle)),
+                 "  Pos_x: " + str(int(self.robot.posx)),
+                 "  Pos_y: " + str(int(self.robot.posy)),
+                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
+                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
+                 "",
+                 "Fitness:",
+                 "  Cleaned: " + str(self.cleaned),
+                 "  Collisions: " + str(self.robot.num_collisions),
+                 "  Evaluation: " + str(self.fitness()),
+                 "",
+                 "Genetic algorithm: ",
+                 "   Current generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter),
+                 "      Size: " + str(gen.GenAlg.pop_size_current),
+                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
+                 "   Last generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
+                 "      Best cost: " + str(gen.GenAlg.best_cost),
+                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
+                 ""]
+
     def get_elapsed_time(self, realtime=False):
         """
             Returns the elapsed time in milliseconds multiplied by the time dilation factor
@@ -295,7 +298,7 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, start_x=0, start_y=0, start_angle=0):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -307,11 +310,10 @@ class Environment:
         """
         try:
             self.reset()
-
             # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
             if len(weights) > 0:
-                self.neural_net = ann.NeuralNet(weights)
+                self.neural_net = ann.NeuralNet(weights, recurrence=recurrence)
             else:
                 # Just use some sample velocity in case weights are missing (demo mode)
                 # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
