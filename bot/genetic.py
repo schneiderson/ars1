@@ -58,14 +58,20 @@ class Individual:
         self.cost = cost
 
     def mutate(self, mutation_rate, mutation_size, value_range):
-        value_range_size = abs(value_range[1] - value_range[0])
-        for nucleotide in self.gene:
+        self.hard_mutate(mutation_rate,value_range)
+        # value_range_size = abs(value_range[1] - value_range[0])
+        # for nucleotide in self.gene:
+        #     if random.random() < mutation_rate:
+        #         nucleotide += max(
+        #             min(
+        #                 random.randrange(-1, 2, 2) * mutation_size * value_range_size,
+        #                 value_range[1]),
+        #             value_range[0])
+
+    def hard_mutate(self, mutation_rate, value_range):
+        for i in range(0, len(self.gene)):
             if random.random() < mutation_rate:
-                nucleotide += max(
-                    min(
-                        random.randrange(-1, 2, 2) * mutation_size * value_range_size,
-                        value_range[1]),
-                    value_range[0])
+                self.gene[i] = random.uniform(value_range[0], value_range[1])
 
     def mutant_clone(self, mutation_rate, mutation_size, value_range):
         clone = Individual(self.gene, self.cost)

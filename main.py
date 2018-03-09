@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
     # Load weights from a previous simulation:
     # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
-    weights = load_weights_from_file('weights/weights_20180309-141037/gen4_cost-10420_avg-2869')
-    print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
+    # weights = load_weights_from_file('weights/weights_20180309-141037/gen4_cost-10420_avg-2869')
+    # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
 
     # Start the genetic algorithm
     def costfunc(gene):
@@ -71,5 +71,5 @@ if __name__ == "__main__":
                                  nr_of_output_nodes=2,
                                  recurrence=recurrence)
 
-    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True)
+    genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True)
 
