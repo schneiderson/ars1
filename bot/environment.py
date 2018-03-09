@@ -374,7 +374,8 @@ class Environment:
         """
             Returns the current fitness evaluation of the simulation (float)
         """
-
+        # v = abs((self.robot.vel_left+self.robot.vel_right)/2)
+        # delta_v = abs(self.robot.vel_left-self.robot.vel_right)
         # Simple fitness: total number of dust collected
         # return self.cleaned
 
