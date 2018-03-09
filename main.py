@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     # Start the genetic algorithm
     def costfunc(gene):
-        return -environment.simulate(True, 0, 30, weights=gene, static_delta_t=200, recurrence=recurrence)  # Return minus to convert fitness to cost
+        return -environment.simulate(True, 0, 90, weights=gene, static_delta_t=200, recurrence=recurrence)  # Return minus to convert fitness to cost
 
     
 
