@@ -399,8 +399,9 @@ class Environment:
             i = total / len(self.activations)
 
             v = abs((self.robot.vel_left+self.robot.vel_right)/2)
-            delta_v = abs(self.robot.vel_left-self.robot.vel_right)
-            return v*(1-math.sqrt(delta_v))*i
+            delta_v = abs(abs(self.robot.vel_left)-abs(self.robot.vel_right))
+            evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+            return evaluate * 1000  # multiplied by 1000 to be in the same range as the other cost funcs
         else:
             return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
