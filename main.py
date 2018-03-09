@@ -2,11 +2,11 @@ from bot import environment as env
 from bot import genetic as gen
 
 
-def num_of_weights(nr_of_input_nodes=12,
+def num_of_weights(nr_of_input_nodes=13,
                    nr_of_hidden_layers=1,
                    nr_of_hidden_layer_nodes=6,
                    nr_of_output_nodes=2,
-                   recurrence=False):
+                   recurrence=True):
     nr_of_edges = 0
     if recurrence:
         nr_of_input_nodes += nr_of_output_nodes
@@ -34,6 +34,7 @@ def load_weights_from_file(path):
         weights_float[i] = float(weight)
     return weights_float
 
+
 if __name__ == "__main__":
     environment = env.Environment()
 
@@ -45,19 +46,18 @@ if __name__ == "__main__":
     # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
 
     # Load weights from a previous simulation:
-    weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
-    print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
-
+    # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
+    # print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200)))
 
     # Start the genetic algorithm
     def costfunc(gene):
-        return -environment.simulate(True, 0, 90, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
+        return -environment.simulate(True, 0, 30, weights=gene, static_delta_t=200)  # Return minus to convert fitness to cost
 
-    gene_length = num_of_weights(nr_of_input_nodes=12,
+    gene_length = num_of_weights(nr_of_input_nodes=13,
                                  nr_of_hidden_layers=1,
                                  nr_of_hidden_layer_nodes=6,
                                  nr_of_output_nodes=2,
-                                 recurrence=False)
+                                 recurrence=True)
 
-    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length)
+    genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length)
 
