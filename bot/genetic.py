@@ -1,12 +1,14 @@
 import datetime
 import random
 import math
+import numpy as np
 
 import os
 
 __author__ = "Olve Drageset"
 
 WEIGHTS_DIRECTORY = 'weights/weights_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
 
 def getcost(individual):
     return individual.cost
@@ -161,23 +163,7 @@ class GenAlg:
             GenAlg.generation_counter += 1
             GenAlg.gen_progress = 0
             # Reproduce, creating a new generation
-            self.pop.pop = self.reproduce(crossover_function, elite_rate)
-
-            # Calculate fitness/cost of every individual in the current generation
-            # for agent in self.pop.pop:
-            #     GenAlg.gen_progress += 1
-            #     agent.cost = self.cost_function(agent.gene)
-
-        # Sort by cost, ascending, and print minimal and average cost
-        self.pop.pop = sorted(self.pop.pop, key=getcost)
-
-        # Sum up the total cost of the generation
-        sumcost = 0
-        for agent in self.pop.pop:
-            sumcost += agent.cost
-
-        print("MIN COST: ", self.pop.pop[0].cost, ", AVG COST:", sumcost/len(self.pop.pop))
-        print("gene of min cost individual: ", self.pop.pop[0].gene)
+            self.reproduce(crossover_function, elite_rate)
 
     def reproduce(self, crossover_function, elite_rate):
 
@@ -192,9 +178,9 @@ class GenAlg:
         # Create a new generation by crossing over and mutating the previous
         new_generation = []
         for i in range(0, parent_individuals-1):
-            mut_rate = self.mutation_rate * math.log(i+2, 2)  # Less fit -> mutate more
-            mut_size = self.mutation_size + (1-self.mutation_size)/parent_individuals * i  # Less fit -> mutate more
-            nr_of_children = 3 - max(int(round(i/(parent_individuals*0.333))), 2)  # Less fit -> less children
+            mut_rate = np.tanh(self.mutation_rate * math.log(i+2, 2))  # Less fit -> mutate more
+            mut_size = np.tanh(self.mutation_size + (1-self.mutation_size)/parent_individuals * i)  # Less fit -> mutate more
+            # nr_of_children = 3 - max(int(round(i/(parent_individuals*0.333))), 2)  # Less fit -> less children
             nr_of_children = math.ceil(1/parent_rate)
             # Generate a fitness-appropriate amount of offspring
             for j in range(0, nr_of_children):
@@ -203,6 +189,9 @@ class GenAlg:
                 child = children[random.randrange(0, len(children))]  # Pick one of the children randomly
                 child.mutate(mut_rate, mut_size, self.value_range)  # Mutate it
                 new_generation.append(child)   # Add it to next generation
+
+        GenAlg.pop_size_current = len(new_generation)
+        if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
 
         # Elitism: Keep the top individuals.
         for i in range(0, elite_individuals):
@@ -215,16 +204,17 @@ class GenAlg:
             if not copy:
                 new_generation.append(self.pop.pop[i])
 
-        GenAlg.pop_size_current = len(new_generation)
-        if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+        self.pop.pop = new_generation
 
         # Calculate the cost of individuals in the new generation
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
-            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
+
+        for individual in self.pop.pop:
+            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Calculate average cost of the generation
         sumcost = 0
@@ -246,7 +236,7 @@ class GenAlg:
             file.write(str(self.pop.pop[0].gene))
             file.close()
 
-        return new_generation
+        return self.pop.pop
 
     # Rank-based reproduction through random mutations only
     def reproduce_mutate_only(self, elite_rate):
