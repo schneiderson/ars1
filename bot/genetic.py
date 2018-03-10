@@ -2,8 +2,8 @@ import datetime
 import random
 import math
 import numpy as np
-
 import os
+from graphing import visualize_cost as vc
 
 __author__ = "Olve Drageset"
 
@@ -140,7 +140,8 @@ class GenAlg:
                  max_generations=20,
                  value_range=[-5, 5],
                  init_near_zero=False,
-                 verbose=True):
+                 verbose=True,
+                 plot=False):
         self.cost_function = cost_function
         GenAlg.pop_size = pop_size
         GenAlg.pop_size_current = pop_size
@@ -150,6 +151,12 @@ class GenAlg:
         self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
         self.verbose = verbose
         if self.verbose: print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
+        self.plot = plot
+        self.graph = None
+        if self.plot: 
+            self.graph = vc.Graph()
+            self.graph.start_animated_plotting()
+
         # Calculate the starting cost of the population
         GenAlg.gen_progress = 0
         for agent in self.pop.pop:
@@ -226,21 +233,25 @@ class GenAlg:
         sumcost = 0
         for individual in self.pop.pop:
             sumcost += individual.cost
+        
+        min_cost = self.pop.pop[0].cost
+        avg_cost = sumcost/len(self.pop.pop)
+        if (min_cost) < self.best_cost:
+            GenAlg.best_cost = min_cost
+        GenAlg.avg_cost = avg_cost
         if self.verbose:
-            min_cost = self.pop.pop[0].cost
-            avg_cost = sumcost/len(self.pop.pop)
-            if (min_cost) < self.best_cost:
-                GenAlg.best_cost = min_cost
-            GenAlg.avg_cost = avg_cost
             print(f"MIN COST:{min_cost} AVG COST: {avg_cost}")
             print(f"BEST GENE: {self.pop.pop[0].gene}")
             print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
 
-            # Save weights to file:
-            ensure_weights_directory()
-            file = open(WEIGHTS_DIRECTORY + '/gen' + str(GenAlg.generation_counter) + '_cost' + str(int(min_cost)) + '_avg' + str(int(avg_cost)), 'w')
-            file.write(str(self.pop.pop[0].gene))
-            file.close()
+        if self.plot:
+            self.graph.add_costs(avg_cost, min_cost, True)
+
+        # Save weights to file:
+        ensure_weights_directory()
+        file = open(WEIGHTS_DIRECTORY + '/gen' + str(GenAlg.generation_counter) + '_cost' + str(int(min_cost)) + '_avg' + str(int(avg_cost)), 'w')
+        file.write(str(self.pop.pop[0].gene))
+        file.close()
 
         return self.pop.pop
 

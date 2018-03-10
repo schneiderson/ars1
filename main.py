@@ -70,5 +70,5 @@ if __name__ == "__main__":
                                  nr_of_output_nodes=2,
                                  recurrence=recurrence)
 
-    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True)
+    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=True)
 

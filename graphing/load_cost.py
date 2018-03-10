@@ -20,13 +20,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--directory", help='directory to use',action='store')
 args = parser.parse_args()
 
+graph = vc.Graph()
 
 if args.directory:
-    vc.plot_cost_from_files(args.directory)
+    graph.plot_cost_from_files(args.directory)
 else:
     files = get_directories('weights/')
     latest = determin_latest(files)
-    vc.plot_cost_from_files("weights/" + latest)
+    graph.plot_cost_from_files("weights/" + latest)
 
 
 
