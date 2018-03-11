@@ -82,6 +82,18 @@ class Environment:
             [(300, 300), (300, 500)],
             [(500, 300), (500, 500)],
 
+            # Inner small walls 1
+            # [(200, 300), (300, 300)],
+            # [(200, 500), (300, 500)],
+            # [(200, 300), (200, 500)],
+            # [(300, 300), (300, 500)],
+
+            # Inner small walls 2
+            # [(400, 300), (500, 300)],
+            # [(400, 500), (500, 500)],
+            # [(400, 300), (400, 500)],
+            # [(500, 300), (500, 500)],
+
         ]
 
         # Dust grid (a grid of integers representing the places cleaned by the robot)
@@ -384,11 +396,14 @@ class Environment:
             Returns the current fitness evaluation of the simulation (float)
         """
 
+
         # Simple fitness: total number of dust collected
         # return self.cleaned
 
+
         # Total number of dust collected devided by the number of collisions
-        # return self.cleaned / (1+self.robot.num_collisions)
+        return self.cleaned / (1+self.robot.num_collisions * 0.3)
+
 
         # Total number of dust collected * sensor activation / num collisions
         # if len(self.activations) > 0:
@@ -400,27 +415,51 @@ class Environment:
         # else:
         #     return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
+
         # Wheel speeds + activation (from slides)
         # self.activations and self.rotation_speeds contain the values at each update
-        if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
-            fitness = 0
+        # if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+        #     fitness = 0
+		#
+        #     for n in range(len(self.activations)):
+        #         # Normalized activation value
+        #         i = self.activations[n]
+		#
+        #         # Average of unsigned velocities for both wheels
+        #         v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+		#
+        #         # Absolute algebraic difference
+        #         delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+		#
+        #         evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+        #         fitness += evaluate
+		#
+        #     return fitness
+        # else:
+        #     return 0
 
-            for n in range(len(self.activations)):
-                # Normalized activation value
-                i = self.activations[n]
 
-                # Average of unsigned velocities for both wheels
-                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
-
-                # Absolute algebraic difference
-                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
-
-                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
-                fitness += evaluate
-
-            return fitness
-        else:
-            return 0
+        # Wheel speeds + activation (from slides)
+        # self.activations and self.rotation_speeds contain the values at each update
+        # if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+        #     fitness = 0
+		#
+        #     for n in range(len(self.activations)):
+        #         # Normalized activation value
+        #         i = self.activations[n]
+		#
+        #         # Average of unsigned velocities for both wheels
+        #         v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+		#
+        #         # Absolute algebraic difference
+        #         delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+		#
+        #         evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+        #         fitness += evaluate
+		#
+        #     return self.cleaned / fitness
+        # else:
+        #     return 0
 
     def time_diff_ms(self, time1, time2):
         dt = time1 - time2

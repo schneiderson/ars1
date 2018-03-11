@@ -48,8 +48,8 @@ if __name__ == "__main__":
     recurrence = True
 
     # Load weights from a previous simulation:
-    weights = load_weights_from_file('weights/saved/dt200_180sec_slidescostfunc/gen5_cost-1_avg0')
-    print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence)))
+    weights = load_weights_from_file('weights/weights_20180311-162615/gen20_cost-34548_avg-2328')
+    print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200, recurrence=recurrence)))
 
     # Start the genetic algorithm
     def costfunc(gene):
@@ -69,5 +69,5 @@ if __name__ == "__main__":
                                  nr_of_output_nodes=2,
                                  recurrence=recurrence)
 
-    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=True)
+    # genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=False)
 
