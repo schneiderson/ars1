@@ -37,11 +37,12 @@ class Environment:
         # reset bot
         self.robot.reset()
         self.neural_net = None
+        self.activations = []
+        self.rotation_speeds = []
 
         # Reset the dust grid
         self.cleaned = 0
         self.dirt_sensor = 0
-        self.activations = []
         for index in range(self.grid_size):
             row = [0] * self.grid_size
             self.dirt[index] = row
@@ -419,7 +420,7 @@ class Environment:
 
             return fitness
         else:
-            return self.cleaned / (1+(self.robot.num_collisions * 0.3))
+            return 0
 
     def time_diff_ms(self, time1, time2):
         dt = time1 - time2
