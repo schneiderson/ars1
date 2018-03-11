@@ -39,18 +39,17 @@ if __name__ == "__main__":
     environment = env.Environment()
 
     # Some untrained manual runs:
-    # Simulate a game with graphics enabled at speed 1 for 20 seconds
+    # Simulate a game with graphics enabled at speed 1 for 20 seconds, without movement model
     # print("Simulation fitness result: " + str(environment.simulate(True, 1, 20)))
 
-    # Simulate a 90 second game at x20 speed without graphics
+    # Simulate a 90 second game at x20 speed without graphics, without movement model
     # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
 
     recurrence = True
 
     # Load weights from a previous simulation:
-    # weights = load_weights_from_file('weights/saved/weights_20180308-235402/gen8_cost-4036_avg-4036')
     weights = load_weights_from_file('weights/saved/dt200_180sec_slidescostfunc/gen5_cost-1_avg0')
-    print("Simulation fitness result: " + str(environment.simulate(True, 0, 0, weights=weights, static_delta_t=200, recurrence=recurrence)))
+    print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence)))
 
     # Start the genetic algorithm
     def costfunc(gene):

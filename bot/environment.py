@@ -6,6 +6,7 @@ from datetime import datetime
 from bot import robot as bot
 from bot import genetic as gen
 from bot import ann as ann
+import time
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
@@ -100,7 +101,7 @@ class Environment:
         self.updates = 0
         self.time = 0
         self.simulation_start_time = datetime.now()
-        self.static_time_mode_delta_t = 200  # Simulation will update using this delta_t if static_time_mode is enabled.
+        self.delta_t = 0  # Simulation will update using this delta_t if static_time_mode is enabled.
 
     def on_init(self):
         """
@@ -145,61 +146,61 @@ class Environment:
             Update all relevant movement and simulation logic
         """
 
-        # Check if update is allowed (always allowed if static time mode is enabled)
-        update = False
-        if self.static_time_mode:
-            # Use the static delta t
-            update = True
-            delta_time = self.static_time_mode_delta_t
-        else:
-            # Calculate time since last frame
-            current_time = self.get_elapsed_time()
-            delta_time = current_time - self.time
-            if delta_time - 150 > 0:
-                update = True
-                self.time = current_time
+        # Check update timings
+        current_time = self.get_elapsed_time()
+        time_since_update = current_time - self.time
 
-        if update:
-            self.updates += 1
+        # Wait if time dilation is used
+        delta_t = self.delta_t
+        if self.delta_t == 0:
+            delta_t = time_since_update
+        if not self.static_time_mode:
+            while time_since_update < self.delta_t:
+                time.sleep(0.01)  # wait for 10 ms
+                current_time = self.get_elapsed_time()
+                time_since_update = current_time - self.time
 
-            # Get a new move from the neural net if it was initialized
-            if self.neural_net is not None:
-                inputs = []
-                for index, sensor in enumerate(self.robot.sensors):
-                    inputs.append(sensor[1])
-                inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
-                vel_lr = self.neural_net.get_velocities(inputs)
-                self.robot.set_velocity(vel_lr[0], vel_lr[1])
+        self.updates += 1
+        self.time = current_time
 
-            # Update robot position
-            self.robot.move_robot(delta_time)
+        # Get a new move from the neural net if it was initialized
+        if self.neural_net is not None:
+            inputs = []
+            for index, sensor in enumerate(self.robot.sensors):
+                inputs.append(sensor[1])
+            inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
+            vel_lr = self.neural_net.get_velocities(inputs)
+            self.robot.set_velocity(vel_lr[0], vel_lr[1])
 
-            # Update robot sensors
-            closest_activation = self.robot.update_sensors(self.walls)
-            max_activation = self.robot.max_activation
-            norm = closest_activation / max_activation
-            self.activations.append(norm)
+        # Update robot position
+        self.robot.move_robot(delta_t)
 
-            dirt_value = 5 * norm
-            self.dirt_sensor = 0
-            # Update dirt
-            dirt_i = int(self.robot.posx / (self.width / self.grid_size))
-            dirt_j = int(self.robot.posy / (self.height / self.grid_size))
-            for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) - 1):
-                for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
-                    if self.dirt[dirt_j - n][dirt_i - m] == 0:
-                        self.dirt[dirt_j - n][dirt_i - m] = dirt_value
-                        self.dirt_sensor += dirt_value
-                    if self.dirt[dirt_j + n][dirt_i + m] == 0:
-                        self.dirt[dirt_j + n][dirt_i + m] = dirt_value
-                        self.dirt_sensor += dirt_value
-                    if self.dirt[dirt_j - n][dirt_i + m] == 0:
-                        self.dirt[dirt_j - n][dirt_i + m] = dirt_value
-                        self.dirt_sensor += dirt_value
-                    if self.dirt[dirt_j + n][dirt_i - m] == 0:
-                        self.dirt[dirt_j + n][dirt_i - m] = dirt_value
-                        self.dirt_sensor += dirt_value
-            self.cleaned += self.dirt_sensor
+        # Update robot sensors
+        closest_activation = self.robot.update_sensors(self.walls)
+        max_activation = self.robot.max_activation
+        norm = closest_activation / max_activation
+        self.activations.append(norm)
+
+        dirt_value = 5 * norm
+        self.dirt_sensor = 0
+        # Update dirt
+        dirt_i = int(self.robot.posx / (self.width / self.grid_size))
+        dirt_j = int(self.robot.posy / (self.height / self.grid_size))
+        for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) - 1):
+            for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
+                if self.dirt[dirt_j - n][dirt_i - m] == 0:
+                    self.dirt[dirt_j - n][dirt_i - m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j + n][dirt_i + m] == 0:
+                    self.dirt[dirt_j + n][dirt_i + m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j - n][dirt_i + m] == 0:
+                    self.dirt[dirt_j - n][dirt_i + m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j + n][dirt_i - m] == 0:
+                    self.dirt[dirt_j + n][dirt_i - m] = dirt_value
+                    self.dirt_sensor += dirt_value
+        self.cleaned += self.dirt_sensor
 
     def on_render(self):
         """
@@ -293,7 +294,7 @@ class Environment:
         """
         # Returns a fake elapsed time if time mode is static
         if self.static_time_mode and not realtime:
-            return int(self.static_time_mode_delta_t * self.updates)
+            return int(self.delta_t * self.updates)
 
         # Calculate the actual elapsed time
         elapsed_t = self.time_diff_ms(datetime.now(), self.simulation_start_time)
@@ -320,16 +321,19 @@ class Environment:
                 self.neural_net = ann.NeuralNet(weights, recurrence=recurrence)
             else:
                 # Just use some sample velocity in case weights are missing (demo mode)
-                # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
-                self.robot.set_velocity(1, 1)
+                self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
+                # self.robot.set_velocity(1, 1)
             self.time_dilation = time_dilation
             if time_dilation == 0:
                 self.static_time_mode = True
-                if static_delta_t is not None:
-                    # Static delta_t can not exceed the robots radius or else it will shoot trough environment limits!
-                    if static_delta_t > 200:
-                        raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
-                    self.static_time_mode_delta_t = static_delta_t
+            if static_delta_t is not None:
+                # Static delta_t can not exceed the robots radius or else it will shoot trough environment limits!
+                if static_delta_t > 200:
+                    raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
+                self.delta_t = static_delta_t
+            else:
+                if time_dilation == 0:
+                    self.delta_t = 200
 
             if start_x != 0 and start_y != 0:
                 self.robot.set_robot_position(start_x, start_y, start_angle)
