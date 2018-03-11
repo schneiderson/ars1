@@ -89,11 +89,14 @@ class Environment:
         self.grid_size = 128  # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
         self.cleaned = 0
         self.dirt_sensor = 0
-        self.activations = []
         self.dirt = [0] * self.grid_size
         for index in range(self.grid_size):
             row = [0] * self.grid_size
             self.dirt[index] = row
+
+        # Track fitness
+        self.activations = []
+        self.rotation_speeds = []
 
         # Display parameters
         self.size = self.width, self.height = 1024, 768
@@ -171,6 +174,7 @@ class Environment:
             inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
             vel_lr = self.neural_net.get_velocities(inputs)
             self.robot.set_velocity(vel_lr[0], vel_lr[1])
+            self.rotation_speeds.append(vel_lr)
 
         # Update robot position
         self.robot.move_robot(delta_t)
@@ -395,17 +399,25 @@ class Environment:
         # else:
         #     return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
-        # Wheel activation (from slides)
-        if len(self.activations) > 0:
-            total = 0
-            for n in self.activations:
-                total += n
-            i = total / len(self.activations)
+        # Wheel speeds + activation (from slides)
+        # self.activations and self.rotation_speeds contain the values at each update
+        if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+            fitness = 0
 
-            v = abs((self.robot.vel_left+self.robot.vel_right)/2)
-            delta_v = abs(abs(self.robot.vel_left)-abs(self.robot.vel_right))
-            evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
-            return evaluate * 1000  # multiplied by 1000 to be in the same range as the other cost funcs
+            for n in range(len(self.activations)):
+                # Normalized activation value
+                i = self.activations[n]
+
+                # Average of unsigned velocities for both wheels
+                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+
+                # Absolute algebraic difference
+                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+
+                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                fitness += evaluate
+
+            return fitness
         else:
             return self.cleaned / (1+(self.robot.num_collisions * 0.3))
 
