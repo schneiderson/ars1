@@ -11,6 +11,8 @@ def determin_latest(files):
         if ( m == None ): continue
         if( latest_date < int(m.group(1)) ): 
             latest_date = int(m.group(1))
+            latest_time = int(m.group(2))
+        elif( latest_date == int(m.group(1)) ):
             if( latest_time < int(m.group(2)) ): 
                 latest_time = int(m.group(2))
     return "weights_" + str(latest_date) + "-" + str(latest_time)
