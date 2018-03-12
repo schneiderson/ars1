@@ -9,6 +9,10 @@ def num_of_weights(nr_of_input_nodes=13,
                    nr_of_hidden_layer_nodes=6,
                    nr_of_output_nodes=2,
                    recurrence=True):
+    """
+        Helper function to calculate the total number of weights given the ANN dimensions
+    """
+
     nr_of_edges = 0
     if recurrence:
         nr_of_input_nodes += nr_of_output_nodes
@@ -24,6 +28,10 @@ def num_of_weights(nr_of_input_nodes=13,
 
 
 def load_weights_from_file(path):
+    """
+        Helper function to load a file from the weights/ directory given the relative path
+        Weights from a  previous simulation can be reused for demonstration purposes
+    """
     file = open(path, 'r')
     weights_string = file.read()
     weights_list = weights_string.split()
@@ -43,14 +51,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--mode", help='execution mode', action='store')
     args = parser.parse_args()
-
-
-    # Some untrained manual runs:
-    # Simulate a game with graphics enabled at speed 1 for 20 seconds, without movement model
-    # print("Simulation fitness result: " + str(environment.simulate(True, 1, 20)))
-
-    # Simulate a 90 second game at x20 speed without graphics, without movement model
-    # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
 
     simulation = None
     if args.mode:
@@ -75,12 +75,16 @@ if __name__ == "__main__":
     recurrence = True
 
     if not simulation:
-        # Load weights from a previous simulation:
+        """
+            Load weights from a previous simulation:
+        """
         weights = load_weights_from_file('weights/saved/dt200_180sec_cost3/gen5_cost-21245_avg-5821')
         print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence, fitness_id=3, start_x=400, start_y=175, start_angle=0)))
 
     else:
-        # Start the genetic algorithm
+        """
+            Start the genetic algorithm
+        """
         def costfunc(gene):
             cost = 0                # Total cost for this individual (cost is accumulated using 3 different simulations; see below)
             graphics = True         # Enable/Disable graphics rendering
@@ -101,3 +105,10 @@ if __name__ == "__main__":
 
         genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=False, max_generations=20)
 
+
+    # Some untrained manual runs:
+    # Simulate a game with graphics enabled at speed 1 for 20 seconds, without movement model
+    # print("Simulation fitness result: " + str(environment.simulate(True, 1, 20)))
+
+    # Simulate a 90 second game at x20 speed without graphics, without movement model
+    # print("Simulation fitness result: " + str(environment.simulate(True, 20, 90)))
