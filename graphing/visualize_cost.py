@@ -6,7 +6,10 @@ import numpy as np
 
 __author__: 'Steffen Schneider'
 
-
+"""
+Graph class
+ - enables to plot costs saved in files or during the simulation
+"""
 class Graph:
     def __init__(self, avg_cost = [], best_cost = []):
         self.fig = plt.figure()
@@ -56,17 +59,26 @@ class Graph:
 Helper fuctions
 """
 def files_collect(path):
+    """
+    collect files from a directory
+    """
     for file in os.listdir(path):
         if os.path.isfile(os.path.join(path, file)):
             yield file
 
 def get_files_array(path):
+    """
+    get files as array
+    """
     files = []
     for file in files_collect(path):
         files.append(file)
     return files
 
 def transform_data(files):
+    """
+    transform data for plotting
+    """
     avg_cost = [0] * len(files)
     best_cost = [0] * len(files)
     for file in files:
