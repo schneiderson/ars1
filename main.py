@@ -105,14 +105,14 @@ if __name__ == "__main__":
 
         genetic_algorithm = gen.GenAlg(cost_function=costfunc,
                                        gene_length=gene_length,
-                                       verbose=True,
+                                       verbose=False,
                                        plot=True,
-                                       max_generations=30,
-                                       pop_size=30,
-                                       elite_rate=0.15,
-                                       mutation_rate=0.075,
-                                       value_range=[-7, 7],
-                                       crossover_function=gen.two_point_crossover)
+                                       max_generations=20,
+                                       pop_size=20,
+                                       elite_rate=0.1,
+                                       mutation_rate=0.1,
+                                       value_range=[-5, 5],
+                                       crossover_function=gen.single_point_crossover)
 
 
     # Some untrained manual runs:
