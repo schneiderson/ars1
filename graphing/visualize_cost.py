@@ -31,8 +31,8 @@ class Graph:
         self.plot_cost()
 
     def add_costs(self, avg_cost, best_cost, animate=False):
-        self.avg_cost.append(avg_cost)
-        self.best_cost.append(best_cost)
+        self.avg_cost.append(abs(avg_cost))
+        self.best_cost.append(abs(best_cost))
         if animate: self.update_plot()
 
     def update_plot(self):
