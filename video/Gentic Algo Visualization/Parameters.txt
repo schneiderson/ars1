@@ -1,0 +1,26 @@
+Used for testing:
+	Popsize: 20
+	max gens: 20
+	cross over func: Single Point
+	Reproduction scheme: Trunkated Rank-based
+		parent rate: 0.75
+	elite rate: 0.1
+	mutation rate: 0.1
+	mutation size: 100%
+
+Lower selection pressure
+No increase of population average performance over time: No convergence
+
+Better performing:
+	Popsize: 30
+	max gens: 30
+	cross func: two-point
+	Reproduction scheme: Trunkated Rank-based
+		parent rate: 0.5
+	elite rate: 0.15
+	mutation rate: 0.05
+	mutation size: 100%
+
+higher selection pressure
+Some increase in population average over time
+

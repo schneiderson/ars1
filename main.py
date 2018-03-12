@@ -87,7 +87,7 @@ if __name__ == "__main__":
         """
         def costfunc(gene):
             cost = 0                # Total cost for this individual (cost is accumulated using 3 different simulations; see below)
-            graphics = True         # Enable/Disable graphics rendering
+            graphics = False        # Enable/Disable graphics rendering
             time_dilation = 0       # Simulation speed factor. 0 = as fast as possible
             simulation_time = 90    # Simulation time in seconds
             delta_t = 200           # delta_t used when updating the robot position
@@ -103,7 +103,16 @@ if __name__ == "__main__":
                                      nr_of_output_nodes=2,
                                      recurrence=recurrence)
 
-        genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=False, max_generations=20)
+        genetic_algorithm = gen.GenAlg(cost_function=costfunc,
+                                       gene_length=gene_length,
+                                       verbose=True,
+                                       plot=True,
+                                       max_generations=30,
+                                       pop_size=30,
+                                       elite_rate=0.15,
+                                       mutation_rate=0.075,
+                                       value_range=[-7, 7],
+                                       crossover_function=gen.two_point_crossover)
 
 
     # Some untrained manual runs:
