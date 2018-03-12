@@ -6,6 +6,8 @@
 - Andre Gramlich
 - Camiel Kerkhofs
 
+(Specific code authorship is indicated at the top of each file)
+
 ## Python 3.6 dependencies
 - numpy
 - matplotlib
@@ -22,3 +24,20 @@ python main.py -m 2
 ```
 
 If you wish to change any simulation settings, edit the main.py file before execution
+
+### Testing
+how to run unit tests:
+```
+python -m unittest tests.ann_test
+python -m unittest tests.kinematicstest
+python -m unittest tests.robottest
+```
+
+### Plotting
+to show avg and best cost in a graph run: (Only works if you have ran a simulation before)
+```
+python graphing/load_cost.py
+```
+to load a specific result from a directory run: (Relative path to simulation results)
+```
+python graphing/load_cost.py -d <path>

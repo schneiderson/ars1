@@ -68,7 +68,7 @@ if __name__ == "__main__":
             print('\nRunning the best performing model.. (Might open a new window in the background)')
             simulation = False
         elif mode == '2':
-            print('\nRunning a new simulation')
+            print('\nRunning a new simulation.. (Might open a new window in the background)')
             simulation = True
 
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if not simulation:
         # Load weights from a previous simulation:
         weights = load_weights_from_file('weights/saved/dt200_180sec_cost3/gen5_cost-21245_avg-5821')
-        print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence, fitness_id=4, start_x=400, start_y=175, start_angle=0)))
+        print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence, fitness_id=3, start_x=400, start_y=175, start_angle=0)))
 
     else:
         # Start the genetic algorithm
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             time_dilation = 0       # Simulation speed factor. 0 = as fast as possible
             simulation_time = 90    # Simulation time in seconds
             delta_t = 200           # delta_t used when updating the robot position
-            fitness_func_id = 3     # ID of the desired fitness function (See Environment.fitness())
+            fitness_func_id = 2     # ID of the desired fitness function (See Environment.fitness())
             cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=400, start_y=175, start_angle=0, fitness_id=fitness_func_id) # Start in the middle
             cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=80, start_y=80, start_angle=45, fitness_id=fitness_func_id)  # Start in corner
             cost -= environment.simulate(graphics, time_dilation, simulation_time, weights=gene, static_delta_t=delta_t, recurrence=recurrence, start_x=400, start_y=550, start_angle=270, fitness_id=fitness_func_id)  # Start next to a wall
@@ -99,5 +99,5 @@ if __name__ == "__main__":
                                      nr_of_output_nodes=2,
                                      recurrence=recurrence)
 
-        genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=False)
+        genetic_algorithm = gen.GenAlg(cost_function=costfunc, gene_length=gene_length, verbose=True, plot=False, max_generations=20)
 
