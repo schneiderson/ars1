@@ -1,12 +1,14 @@
 import datetime
 import random
 import math
-
+import numpy as np
 import os
+from graphing import visualize_cost as vc
 
 __author__ = "Olve Drageset"
 
 WEIGHTS_DIRECTORY = 'weights/weights_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
 
 def getcost(individual):
     return individual.cost
@@ -56,14 +58,20 @@ class Individual:
         self.cost = cost
 
     def mutate(self, mutation_rate, mutation_size, value_range):
-        value_range_size = abs(value_range[1] - value_range[0])
-        for nucleotide in self.gene:
+        self.hard_mutate(mutation_rate,value_range)
+        # value_range_size = abs(value_range[1] - value_range[0])
+        # for nucleotide in self.gene:
+        #     if random.random() < mutation_rate:
+        #         nucleotide += max(
+        #             min(
+        #                 random.randrange(-1, 2, 2) * mutation_size * value_range_size,
+        #                 value_range[1]),
+        #             value_range[0])
+
+    def hard_mutate(self, mutation_rate, value_range):
+        for i in range(0, len(self.gene)):
             if random.random() < mutation_rate:
-                nucleotide += max(
-                    min(
-                        random.randrange(-1, 2, 2) * mutation_size * value_range_size,
-                        value_range[1]),
-                    value_range[0])
+                self.gene[i] = random.uniform(value_range[0], value_range[1])
 
     def mutant_clone(self, mutation_rate, mutation_size, value_range):
         clone = Individual(self.gene, self.cost)
@@ -126,13 +134,14 @@ class GenAlg:
                  crossover_function=single_point_crossover,
                  pop_size=20,
                  gene_length=5,
-                 mutation_rate=0.1,  # What is the probability of a gene mutating
-                 mutation_size=0.5,  # How large is the change in a value upon mutation
-                 elite_rate=0.05,  # How large a piece of the population is kept as elitism
+                 mutation_rate=0.1,  # What is the probability of a gene mutating, [0,1]
+                 mutation_size=0.5,  # How large is the change in a value upon mutation [0,1]
+                 elite_rate=0.05,  # How large a piece of the population is kept as elitism [0,1]
                  max_generations=20,
                  value_range=[-5, 5],
                  init_near_zero=False,
-                 verbose=True):
+                 verbose=True,
+                 plot=False):
         self.cost_function = cost_function
         GenAlg.pop_size = pop_size
         GenAlg.pop_size_current = pop_size
@@ -142,6 +151,12 @@ class GenAlg:
         self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
         self.verbose = verbose
         if self.verbose: print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
+        self.plot = plot
+        self.graph = None
+        if self.plot: 
+            self.graph = vc.Graph()
+            self.graph.start_animated_plotting()
+
         # Calculate the starting cost of the population
         GenAlg.gen_progress = 0
         for agent in self.pop.pop:
@@ -161,30 +176,14 @@ class GenAlg:
             GenAlg.generation_counter += 1
             GenAlg.gen_progress = 0
             # Reproduce, creating a new generation
-            self.pop.pop = self.reproduce(crossover_function, elite_rate)
-
-            # Calculate fitness/cost of every individual in the current generation
-            # for agent in self.pop.pop:
-            #     GenAlg.gen_progress += 1
-            #     agent.cost = self.cost_function(agent.gene)
-
-        # Sort by cost, ascending, and print minimal and average cost
-        self.pop.pop = sorted(self.pop.pop, key=getcost)
-
-        # Sum up the total cost of the generation
-        sumcost = 0
-        for agent in self.pop.pop:
-            sumcost += agent.cost
-
-        print("MIN COST: ", self.pop.pop[0].cost, ", AVG COST:", sumcost/len(self.pop.pop))
-        print("gene of min cost individual: ", self.pop.pop[0].gene)
+            self.reproduce(crossover_function, elite_rate)
 
     def reproduce(self, crossover_function, elite_rate):
 
         # Make offspring with some of the population. Save top individuals as elitism
         parent_rate = 0.75
         parent_individuals = int(GenAlg.pop_size * parent_rate)
-        elite_individuals = min(int(elite_rate * GenAlg.pop_size), 1)  # max(min(int(GenAlg.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
+        elite_individuals = max(int(elite_rate * GenAlg.pop_size), 1)  # max(min(int(GenAlg.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -192,9 +191,9 @@ class GenAlg:
         # Create a new generation by crossing over and mutating the previous
         new_generation = []
         for i in range(0, parent_individuals-1):
-            mut_rate = self.mutation_rate * math.log(i+2, 2)  # Less fit -> mutate more
-            mut_size = self.mutation_size + (1-self.mutation_size)/parent_individuals * i  # Less fit -> mutate more
-            nr_of_children = 3 - max(int(round(i/(parent_individuals*0.333))), 2)  # Less fit -> less children
+            mut_rate = np.tanh(self.mutation_rate * math.log(i+2, 2))  # Less fit -> mutate more
+            mut_size = np.tanh(self.mutation_size + (1-self.mutation_size)/parent_individuals * i)  # Less fit -> mutate more
+            # nr_of_children = 3 - max(int(round(i/(parent_individuals*0.333))), 2)  # Less fit -> less children
             nr_of_children = math.ceil(1/parent_rate)
             # Generate a fitness-appropriate amount of offspring
             for j in range(0, nr_of_children):
@@ -204,42 +203,57 @@ class GenAlg:
                 child.mutate(mut_rate, mut_size, self.value_range)  # Mutate it
                 new_generation.append(child)   # Add it to next generation
 
-        # Elitism: Keep the top individuals.
-        for i in range(0, elite_individuals):
-            new_generation.append(self.pop.pop[i])
-
         GenAlg.pop_size_current = len(new_generation)
         if self.verbose: print(f"GEN {GenAlg.generation_counter} IS BORN, SIZE: {len(new_generation)}")
+
+        # Elitism: Keep the top individuals.
+        for i in range(0, elite_individuals):
+            # If new_generation does not contain an individual with same gene as self.pop.pop[i]
+            # Add self.pop.pop[i] to new generation
+            copy = False
+            for individual in new_generation:
+                if individual.gene == self.pop.pop[i].gene:
+                    copy = True
+            if not copy:
+                new_generation.append(self.pop.pop[i])
+
+        self.pop.pop = new_generation
 
         # Calculate the cost of individuals in the new generation
         for individual in self.pop.pop:
             individual.update_cost(self.cost_function)
-            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
+
+        for individual in self.pop.pop:
+            if self.verbose: print(f"COST: {individual.cost} GENE(rounded):{[int(i) for i in individual.gene]}")
 
         # Calculate average cost of the generation
         sumcost = 0
         for individual in self.pop.pop:
             sumcost += individual.cost
+        
+        min_cost = self.pop.pop[0].cost
+        avg_cost = sumcost/len(self.pop.pop)
+        if (min_cost) < self.best_cost:
+            GenAlg.best_cost = min_cost
+        GenAlg.avg_cost = avg_cost
         if self.verbose:
-            min_cost = self.pop.pop[0].cost
-            avg_cost = sumcost/len(self.pop.pop)
-            if (min_cost) < self.best_cost:
-                GenAlg.best_cost = min_cost
-            GenAlg.avg_cost = avg_cost
             print(f"MIN COST:{min_cost} AVG COST: {avg_cost}")
             print(f"BEST GENE: {self.pop.pop[0].gene}")
             print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
 
-            # Save weights to file:
-            ensure_weights_directory()
-            file = open(WEIGHTS_DIRECTORY + '/gen' + str(GenAlg.generation_counter) + '_cost' + str(int(min_cost)) + '_avg' + str(int(avg_cost)), 'w')
-            file.write(str(self.pop.pop[0].gene))
-            file.close()
+        if self.plot:
+            self.graph.add_costs(avg_cost, min_cost, True)
 
-        return new_generation
+        # Save weights to file:
+        ensure_weights_directory()
+        file = open(WEIGHTS_DIRECTORY + '/gen' + str(GenAlg.generation_counter) + '_cost' + str(int(min_cost)) + '_avg' + str(int(avg_cost)), 'w')
+        file.write(str(self.pop.pop[0].gene))
+        file.close()
+
+        return self.pop.pop
 
     # Rank-based reproduction through random mutations only
     def reproduce_mutate_only(self, elite_rate):

@@ -62,7 +62,7 @@ class Robot:
             vel_right and vel_left are switched on purpose to compensate for the pygame coordinate system (y-axis is flipped, with 0,0 point being top left)
         """
 
-        if delta_time >= self.radius*7:
+        if delta_time >= self.radius*10:
             # Delta_t exceeds robot radius; wall detection becomes unreliable at this point
             raise ValueError('movement delta_time of ' + str(delta_time) + 'ms exceeds robot radius. This might be caused by a high time_dilation or a screen drag. (Do not drag the screen!)')
         

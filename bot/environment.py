@@ -1,15 +1,17 @@
 ''' ROBOT MODULE '''
+import numpy as np
 import pygame
 import math
 from datetime import datetime
 from bot import robot as bot
 from bot import genetic as gen
 from bot import ann as ann
+import time
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
 pygame.font.init()
-game_font = pygame.font.SysFont('arial', 16)
+game_font = pygame.font.SysFont('arial', 20)
 BLACK = (0, 0, 0)
 GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
@@ -35,6 +37,9 @@ class Environment:
         # reset bot
         self.robot.reset()
         self.neural_net = None
+        self.activations = []
+        self.rotation_speeds = []
+        self.fitness_id = 1
 
         # Reset the dust grid
         self.cleaned = 0
@@ -52,7 +57,7 @@ class Environment:
         self._pygame_initialized = False
         self._running = True
         self._display_surf = None
-        self.graphics_enabled = False
+        self.graphics_enabled = True
         self.static_time_mode = False
         self.time_dilation = 1
 
@@ -78,6 +83,18 @@ class Environment:
             [(300, 300), (300, 500)],
             [(500, 300), (500, 500)],
 
+            # Inner small walls 1
+            # [(200, 300), (300, 300)],
+            # [(200, 500), (300, 500)],
+            # [(200, 300), (200, 500)],
+            # [(300, 300), (300, 500)],
+
+            # Inner small walls 2
+            # [(400, 300), (500, 300)],
+            # [(400, 500), (500, 500)],
+            # [(400, 300), (400, 500)],
+            # [(500, 300), (500, 500)],
+
         ]
 
         # Dust grid (a grid of integers representing the places cleaned by the robot)
@@ -91,13 +108,18 @@ class Environment:
             row = [0] * self.grid_size
             self.dirt[index] = row
 
+        # Track fitness
+        self.activations = []
+        self.rotation_speeds = []
+        self.fitness_id = 1
+
         # Display parameters
         self.size = self.width, self.height = 1024, 768
         self.frames = 0
         self.updates = 0
         self.time = 0
         self.simulation_start_time = datetime.now()
-        self.static_time_mode_delta_t = 200  # Simulation will update using this delta_t if static_time_mode is enabled.
+        self.delta_t = 0  # Simulation will update using this delta_t if static_time_mode is enabled.
 
     def on_init(self):
         """
@@ -142,57 +164,62 @@ class Environment:
             Update all relevant movement and simulation logic
         """
 
-        # Check if update is allowed (always allowed if static time mode is enabled)
-        update = False
-        if self.static_time_mode:
-            # Use the static delta t
-            update = True
-            delta_time = self.static_time_mode_delta_t
-        else:
-            # Calculate time since last frame
-            current_time = self.get_elapsed_time()
-            delta_time = current_time - self.time
-            if delta_time - 10 > 0:
-                update = True
-                self.time = current_time
+        # Check update timings
+        current_time = self.get_elapsed_time()
+        time_since_update = current_time - self.time
 
-        if update:
-            self.updates += 1
+        # Wait if time dilation is used
+        delta_t = self.delta_t
+        if self.delta_t == 0:
+            delta_t = time_since_update
+        if not self.static_time_mode:
+            while time_since_update < self.delta_t:
+                time.sleep(0.01)  # wait for 10 ms
+                current_time = self.get_elapsed_time()
+                time_since_update = current_time - self.time
 
-            # Get a new move from the neural net if it was initialized
-            if self.neural_net is not None:
-                inputs = []
-                for index, sensor in enumerate(self.robot.sensors):
-                    inputs.append(sensor[1])
-                inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
-                vel_lr = self.neural_net.get_velocities(inputs)
-                self.robot.set_velocity(vel_lr[0], vel_lr[1])
+        self.updates += 1
+        self.time = current_time
 
-            # Update robot position
-            self.robot.move_robot(delta_time)
+        # Get a new move from the neural net if it was initialized
+        if self.neural_net is not None:
+            inputs = []
+            for index, sensor in enumerate(self.robot.sensors):
+                inputs.append(sensor[1])
+            inputs.append(self.dirt_sensor)  # dirt sensor "weighs" the dirt cleaned since last update
+            vel_lr = self.neural_net.get_velocities(inputs)
+            self.robot.set_velocity(vel_lr[0], vel_lr[1])
+            self.rotation_speeds.append(vel_lr)
 
-            # Update robot sensors
-            self.robot.update_sensors(self.walls)
+        # Update robot position
+        self.robot.move_robot(delta_t)
 
-            self.dirt_sensor = 0
-            # Update dirt
-            dirt_i = int(self.robot.posx / (self.width / self.grid_size))
-            dirt_j = int(self.robot.posy / (self.height / self.grid_size))
-            for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) - 1):
-                for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
-                    if self.dirt[dirt_j - n][dirt_i - m] == 0:
-                        self.dirt[dirt_j - n][dirt_i - m] = 1
-                        self.dirt_sensor += 1
-                    if self.dirt[dirt_j + n][dirt_i + m] == 0:
-                        self.dirt[dirt_j + n][dirt_i + m] = 1
-                        self.dirt_sensor += 1
-                    if self.dirt[dirt_j - n][dirt_i + m] == 0:
-                        self.dirt[dirt_j - n][dirt_i + m] = 1
-                        self.dirt_sensor += 1
-                    if self.dirt[dirt_j + n][dirt_i - m] == 0:
-                        self.dirt[dirt_j + n][dirt_i - m] = 1
-                        self.dirt_sensor += 1
-            self.cleaned += self.dirt_sensor
+        # Update robot sensors
+        closest_activation = self.robot.update_sensors(self.walls)
+        max_activation = self.robot.max_activation
+        norm = closest_activation / max_activation
+        self.activations.append(norm)
+
+        dirt_value = 5 * norm
+        self.dirt_sensor = 0
+        # Update dirt
+        dirt_i = int(self.robot.posx / (self.width / self.grid_size))
+        dirt_j = int(self.robot.posy / (self.height / self.grid_size))
+        for n in range(int(math.floor(self.robot.radius / (self.height / self.grid_size))) - 1):
+            for m in range(int(math.ceil(self.robot.radius / (self.width / self.grid_size))) - 1):
+                if self.dirt[dirt_j - n][dirt_i - m] == 0:
+                    self.dirt[dirt_j - n][dirt_i - m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j + n][dirt_i + m] == 0:
+                    self.dirt[dirt_j + n][dirt_i + m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j - n][dirt_i + m] == 0:
+                    self.dirt[dirt_j - n][dirt_i + m] = dirt_value
+                    self.dirt_sensor += dirt_value
+                if self.dirt[dirt_j + n][dirt_i - m] == 0:
+                    self.dirt[dirt_j + n][dirt_i - m] = dirt_value
+                    self.dirt_sensor += dirt_value
+        self.cleaned += self.dirt_sensor
 
     def on_render(self):
         """
@@ -204,38 +231,8 @@ class Environment:
 
         self.frames += 1
 
-        debug = ["Debug info:",
-                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
-                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
-                 "Time dilation: * " + str(self.time_dilation),
-                 "Frames: " + str(self.frames),
-                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "Updates: " + str(self.updates),
-                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "",
-                 "Robot:",
-                 "  Angle: " + str(int(self.robot.angle)),
-                 "  Pos_x: " + str(int(self.robot.posx)),
-                 "  Pos_y: " + str(int(self.robot.posy)),
-                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
-                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
-                 "",
-                 "Fitness:",
-                 "  Cleaned: " + str(self.cleaned),
-                 "  Collisions: " + str(self.robot.num_collisions),
-                 "  Evaluation: " + str(self.fitness()),
-                 "",
-                 "Genetic algorithm: ",
-                 "   Current generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter),
-                 "      Size: " + str(gen.GenAlg.pop_size_current),
-                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
-                 "   Last generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
-                 "      Best cost: " + str(gen.GenAlg.best_cost),
-                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
-                 ""]
-
+        debug = self.get_debug_output()
+        
         # Clean display
         self._display_surf.fill(GRAY)
 
@@ -244,7 +241,7 @@ class Environment:
             tile_height = self.height / self.grid_size
             y_offset = tile_height * index_row
             for index_column, dirt_column in enumerate(dirt_row):
-                if dirt_column == 1:
+                if dirt_column > 0:
                     tile_width = self.width / self.grid_size
                     x_offset = tile_width * index_column
                     pygame.draw.rect(self._display_surf, WHITE, (x_offset, y_offset, tile_width, tile_height), 0)
@@ -270,10 +267,44 @@ class Environment:
 
         # Draw debug metrics
         for index, info in enumerate(debug):
-            self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
+            self._display_surf.blit(game_font.render(info, False, BLACK), (830, 50 + (index * 18)))
 
         # Update display
         pygame.display.update()
+
+    def get_debug_output(self):
+        return ["Debug info:",
+                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
+                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
+                 "Time dilation: * " + str(self.time_dilation),
+                 "Frames: " + str(self.frames),
+                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                 "Updates: " + str(self.updates),
+                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                 "",
+                 "Robot:",
+                 "  Angle: " + str(int(self.robot.angle)),
+                 "  Pos_x: " + str(int(self.robot.posx)),
+                 "  Pos_y: " + str(int(self.robot.posy)),
+                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
+                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
+                 "",
+                 "Fitness:",
+                 "  Cleaned: " + str(int(self.cleaned)),
+                 "  Collisions: " + str(self.robot.num_collisions),
+                 "  Activations: " + str(len(self.activations)),
+                 "  Evaluation: " + str(int(self.fitness())),
+                 "",
+                 "Genetic algorithm: ",
+                 "   Current generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter),
+                 "      Size: " + str(gen.GenAlg.pop_size_current),
+                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
+                 "   Last generation: ",
+                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
+                 "      Best cost: " + str(gen.GenAlg.best_cost),
+                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
+                 ""]
 
     def get_elapsed_time(self, realtime=False):
         """
@@ -282,7 +313,7 @@ class Environment:
         """
         # Returns a fake elapsed time if time mode is static
         if self.static_time_mode and not realtime:
-            return int(self.static_time_mode_delta_t * self.updates)
+            return int(self.delta_t * self.updates)
 
         # Calculate the actual elapsed time
         elapsed_t = self.time_diff_ms(datetime.now(), self.simulation_start_time)
@@ -291,7 +322,7 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0, fitness_id=1):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -303,23 +334,29 @@ class Environment:
         """
         try:
             self.reset()
-
             # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
+            self.fitness_id = fitness_id
             if len(weights) > 0:
-                self.neural_net = ann.NeuralNet(weights)
+                self.neural_net = ann.NeuralNet(weights, recurrence=recurrence)
             else:
                 # Just use some sample velocity in case weights are missing (demo mode)
-                # self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
-                self.robot.set_velocity(1, 1)
+                self.robot.set_velocity(0.65, 0.5)  # 0.65,0.5 = circle movement
+                # self.robot.set_velocity(1, 1)
             self.time_dilation = time_dilation
             if time_dilation == 0:
                 self.static_time_mode = True
-                if static_delta_t is not None:
-                    # Static delta_t can not exceed the robots radius or else it will shoot trough environment limits!
-                    if static_delta_t > 200:
-                        raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
-                    self.static_time_mode_delta_t = static_delta_t
+            if static_delta_t is not None:
+                # Static delta_t can not exceed the robots radius or else it will shoot trough environment limits!
+                if static_delta_t > 200:
+                    raise ValueError('delta_t exceeds the limit of 200ms. Requested delta_t: ' + str(static_delta_t))
+                self.delta_t = static_delta_t
+            else:
+                if time_dilation == 0:
+                    self.delta_t = 200
+
+            if start_x != 0 and start_y != 0:
+                self.robot.set_robot_position(start_x, start_y, start_angle)
 
             if self.on_init() == False:
                 # Has no return value but will return False if pygame library encounters an internal error
@@ -362,24 +399,69 @@ class Environment:
             Returns the current fitness evaluation of the simulation (float)
         """
 
-        # TODO: Test different fitness functions
-        # return self.cleaned  # Basic distance travelled
-        return self.cleaned / (1+self.robot.num_collisions) # Basic distance travelled + low num_collisions is rewarded
-        v = abs((self.robot.vel_left+self.robot.vel_right)/2)
-        delta_v = abs(self.robot.vel_left-self.robot.vel_right)
-        i = min(self.robot.sensors)-29
+        if self.fitness_id == 1:
+            # 1: Simple fitness: total number of dust collected
+            return self.cleaned
 
-        # return self.robot.vel_left
+
+        elif self.fitness_id == 2:
+            # 2: Total number of dust collected devided by the number of collisions
+            return self.cleaned / (1+self.robot.num_collisions * 0.3)
+
+
+        elif self.fitness_id == 3 and len(self.activations) > 0:
+            # 3: Total number of dust collected * sensor activation / num collisions
+            total = 0
+            for i in self.activations:
+                total += i
+            avg = total / len(self.activations)
+            return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
+
+
+        elif self.fitness_id == 4 and len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+            # 4: Wheel speeds + activation (from slides)
+            # self.activations and self.rotation_speeds contain the values at each update
+            fitness = 0
+
+            for n in range(len(self.activations)):
+                # Normalized activation value
+                i = self.activations[n]
+
+                # Average of unsigned velocities for both wheels
+                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+
+                # Absolute algebraic difference
+                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+
+                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                fitness += evaluate
+
+            return fitness
+
+
+        elif self.fitness_id == 5 and len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+            # 5: Wheel speeds + activation (from slides)
+            # self.activations and self.rotation_speeds contain the values at each update
+            fitness = 0
+
+            for n in range(len(self.activations)):
+                # Normalized activation value
+                i = self.activations[n]
+
+                # Average of unsigned velocities for both wheels
+                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+
+                # Absolute algebraic difference
+                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+
+                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                fitness += evaluate
+
+            return self.cleaned / fitness
+        else:
+            return 0
 
     def time_diff_ms(self, time1, time2):
         dt = time1 - time2
         ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
         return ms
-
-    def normalize_activation(self):
-        min_x = min(self.robot.sensors)
-        max_x = max(self.robot.sensors)
-        z = []
-        for index in self.robot.sensors
-            z.append(self.robot.sensors[index])
-        return
