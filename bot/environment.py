@@ -11,7 +11,7 @@ import time
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
 pygame.font.init()
-game_font = pygame.font.SysFont('arial', 16)
+game_font = pygame.font.SysFont('arial', 20)
 BLACK = (0, 0, 0)
 GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
@@ -39,6 +39,7 @@ class Environment:
         self.neural_net = None
         self.activations = []
         self.rotation_speeds = []
+        self.fitness_id = 1
 
         # Reset the dust grid
         self.cleaned = 0
@@ -110,6 +111,7 @@ class Environment:
         # Track fitness
         self.activations = []
         self.rotation_speeds = []
+        self.fitness_id = 1
 
         # Display parameters
         self.size = self.width, self.height = 1024, 768
@@ -265,7 +267,7 @@ class Environment:
 
         # Draw debug metrics
         for index, info in enumerate(debug):
-            self._display_surf.blit(game_font.render(info, False, BLACK), (800, 50 + (index * 15)))
+            self._display_surf.blit(game_font.render(info, False, BLACK), (830, 50 + (index * 18)))
 
         # Update display
         pygame.display.update()
@@ -288,10 +290,10 @@ class Environment:
                  "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
                  "",
                  "Fitness:",
-                 "  Cleaned: " + str(self.cleaned),
+                 "  Cleaned: " + str(int(self.cleaned)),
                  "  Collisions: " + str(self.robot.num_collisions),
                  "  Activations: " + str(len(self.activations)),
-                 "  Evaluation: " + str(self.fitness()),
+                 "  Evaluation: " + str(int(self.fitness())),
                  "",
                  "Genetic algorithm: ",
                  "   Current generation: ",
@@ -320,7 +322,7 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0, fitness_id=1):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -334,6 +336,7 @@ class Environment:
             self.reset()
             # Apply configuration parameters and check their validity
             self.graphics_enabled = graphics_enabled
+            self.fitness_id = fitness_id
             if len(weights) > 0:
                 self.neural_net = ann.NeuralNet(weights, recurrence=recurrence)
             else:
@@ -396,70 +399,67 @@ class Environment:
             Returns the current fitness evaluation of the simulation (float)
         """
 
-
-        # Simple fitness: total number of dust collected
-        # return self.cleaned
-
-
-        # Total number of dust collected devided by the number of collisions
-        return self.cleaned / (1+self.robot.num_collisions * 0.3)
+        if self.fitness_id == 1:
+            # 1: Simple fitness: total number of dust collected
+            return self.cleaned
 
 
-        # Total number of dust collected * sensor activation / num collisions
-        # if len(self.activations) > 0:
-        #     total = 0
-        #     for i in self.activations:
-        #         total += i
-        #     avg = total / len(self.activations)
-        #     return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
-        # else:
-        #     return self.cleaned / (1+(self.robot.num_collisions * 0.3))
+        elif self.fitness_id == 2:
+            # 2: Total number of dust collected devided by the number of collisions
+            return self.cleaned / (1+self.robot.num_collisions * 0.3)
 
 
-        # Wheel speeds + activation (from slides)
-        # self.activations and self.rotation_speeds contain the values at each update
-        # if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
-        #     fitness = 0
-		#
-        #     for n in range(len(self.activations)):
-        #         # Normalized activation value
-        #         i = self.activations[n]
-		#
-        #         # Average of unsigned velocities for both wheels
-        #         v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
-		#
-        #         # Absolute algebraic difference
-        #         delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
-		#
-        #         evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
-        #         fitness += evaluate
-		#
-        #     return fitness
-        # else:
-        #     return 0
+        elif self.fitness_id == 3 and len(self.activations) > 0:
+            # 3: Total number of dust collected * sensor activation / num collisions
+            total = 0
+            for i in self.activations:
+                total += i
+            avg = total / len(self.activations)
+            return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
 
 
-        # Wheel speeds + activation (from slides)
-        # self.activations and self.rotation_speeds contain the values at each update
-        # if len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
-        #     fitness = 0
-		#
-        #     for n in range(len(self.activations)):
-        #         # Normalized activation value
-        #         i = self.activations[n]
-		#
-        #         # Average of unsigned velocities for both wheels
-        #         v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
-		#
-        #         # Absolute algebraic difference
-        #         delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
-		#
-        #         evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
-        #         fitness += evaluate
-		#
-        #     return self.cleaned / fitness
-        # else:
-        #     return 0
+        elif self.fitness_id == 4 and len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+            # 4: Wheel speeds + activation (from slides)
+            # self.activations and self.rotation_speeds contain the values at each update
+            fitness = 0
+
+            for n in range(len(self.activations)):
+                # Normalized activation value
+                i = self.activations[n]
+
+                # Average of unsigned velocities for both wheels
+                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+
+                # Absolute algebraic difference
+                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+
+                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                fitness += evaluate
+
+            return fitness
+
+
+        elif self.fitness_id == 5 and len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
+            # 5: Wheel speeds + activation (from slides)
+            # self.activations and self.rotation_speeds contain the values at each update
+            fitness = 0
+
+            for n in range(len(self.activations)):
+                # Normalized activation value
+                i = self.activations[n]
+
+                # Average of unsigned velocities for both wheels
+                v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
+
+                # Absolute algebraic difference
+                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+
+                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                fitness += evaluate
+
+            return self.cleaned / fitness
+        else:
+            return 0
 
     def time_diff_ms(self, time1, time2):
         dt = time1 - time2
