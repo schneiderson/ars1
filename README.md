@@ -1,20 +1,24 @@
-# ars1
+# Autonomous Robotic Systems assignment 1
 
-helpful tutorial for pygame:
-http://thepythongamebook.com/en:pygame:step000
+## Group 2
+- Steffen Schneider
+- Olve Drageset
+- Andre Gramlich
+- Camiel Kerkhofs
 
-### Testing
-how to run unit tests:
+## Python 3.6 dependencies
+- numpy
+- matplotlib
+- pygame
+
+## Execution
+To run our best performing model execute the main.py file with the following command:
 ```
-python -m unittest tests.kinematicstest
+python main.py -m 1
+```
+To run a new simulation, execute the main.py file with the following command:
+```
+python main.py -m 2
 ```
 
-### Plotting
-to show avg and best cost in a graph run:
-```
-python graphing/load_cost.py
-```
-to load a specific result from a directory run:
-```
-python graphing/load_cost.py -d <path>
-```
+If you wish to change any simulation settings, edit the main.py file before execution
