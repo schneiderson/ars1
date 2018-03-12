@@ -71,7 +71,7 @@ def transform_data(files):
     best_cost = [0] * len(files)
     for file in files:
         m = re.search('gen(\d{1,4})_cost(.\d*)_avg(.\d*)', file)
-        best_cost[int(m.group(1))-1] = int(m.group(2))
-        avg_cost[int(m.group(1))-1] = int(m.group(3))
+        best_cost[int(m.group(1))-1] = abs(int(m.group(2)))
+        avg_cost[int(m.group(1))-1] = abs(int(m.group(3)))
     return avg_cost, best_cost
 

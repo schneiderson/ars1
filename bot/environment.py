@@ -388,11 +388,11 @@ class Environment:
                 print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
             print('\033[0m' + "\n")
             return 0
-        # except Exception as inst:
-        #     print('\033[91m' + "=== ERROR === Simulation failed with message: ")
-        #     print(inst)
-        #     print('\033[0m' + "\n")
-        #     return 0
+        except Exception as inst:
+            print('\033[91m' + "=== ERROR === Simulation failed with message: ")
+            print(inst)
+            print('\033[0m' + "\n")
+            return 0
 
     def fitness(self):
         """
