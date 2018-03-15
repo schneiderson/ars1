@@ -139,11 +139,9 @@ class Environment:
             Some keyboard events for testing purposes (not used during training)
         """
 
-        if not self.graphics_enabled:
-            return True
-
         if event.type == pygame.QUIT:
             self._running = False
+            quit()
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 self.robot.vel_left += self.velocity_base
