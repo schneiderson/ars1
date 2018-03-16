@@ -91,7 +91,7 @@ class Robot:
                     # Determine beacon distance to intersect
                     distance = math.sqrt((intersect[0] - beacon[0]) ** 2 + (intersect[1] - beacon[1]) ** 2)
                     if distance > BEACON_COLLISION_TOLERANCE:
-                        print('Beacon ' + str(beacon) + ' intersects with wall ' + str(wall) + ' at point ' + str(intersect) + '. distance: ' + str(distance))
+                        #print('Beacon ' + str(beacon) + ' intersects with wall ' + str(wall) + ' at point ' + str(intersect) + '. distance: ' + str(distance))
                         connected = False
             if connected:
                 # Determine distance to beacon and save beacon as connected
@@ -100,7 +100,24 @@ class Robot:
         self.connected_beacons = connected_beacons
 
         # Triangulate connected beacons
+        for index, beacon in enumerate(connected_beacons):
+            # triangulate with all other beacons
+            for index_2, beacon_2 in enumerate(connected_beacons):
+                if index_2 != index:
+                    # distance between 2 beacons
+                    a = math.sqrt((beacon[0] - beacon_2[0]) ** 2 + (beacon[1] - beacon_2[1]) ** 2)
 
+                    # distance between beaacon 1 and robot
+                    d1 = math.sqrt((self.posx - beacon[0]) ** 2 + (self.posy - beacon[1]) ** 2)
+
+                    # distance between beaacon 2 and robot
+                    d2 = math.sqrt((self.posx - beacon_2[0]) ** 2 + (self.posy - beacon_2[1]) ** 2)
+
+                    x = (a**2 + d1**2 - d2**2) / (2*a)
+                    y = math.sqrt(d1**2 - x**2)
+
+                    if x > 0:
+                        pass
 
 
     def update_sensors(self, walls):
