@@ -97,6 +97,20 @@ class Environment:
 
         ]
 
+        # Beacons
+        # A beacon is placed at each wallcorner and is reperesented by an x and y coordinate [x, y]
+        self.beacons = [
+            [50,50],
+            [750, 50],
+            [50, 750],
+            [750, 750],
+
+            [300, 300],
+            [300, 500],
+            [500, 300],
+            [500, 500]
+        ]
+
         # Dust grid (a grid of integers representing the places cleaned by the robot)
         # cell value 0 means the robot has not been there yet (dirty)
         # cell value 1 means the robot has not been there (clean)
@@ -132,6 +146,7 @@ class Environment:
             self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
         self.robot.update_sensors(self.walls)
+        self.robot.update_beacons(self.beacons, self.walls)
         self.on_render()
 
     def on_event(self, event):
@@ -194,6 +209,7 @@ class Environment:
 
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)
+        self.robot.update_beacons(self.beacons, self.walls)
         max_activation = self.robot.max_activation
         norm = closest_activation / max_activation
         self.activations.append(norm)
@@ -248,12 +264,21 @@ class Environment:
         for w in self.walls:
             pygame.draw.line(self._display_surf, BLACK, w[0], w[1])
 
-        # Draw sensors
+        # Draw beacons
+        for b in self.beacons:
+            pygame.draw.circle(self._display_surf, RED, b, 5, 0)
+
+        # Draw beacon connections
         robot_pos = (int(self.robot.posx), int(self.robot.posy))
-        for index, sensor in enumerate(self.robot.sensors):
-            pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
-            textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
-            self._display_surf.blit(textsurface, sensor[2])
+        for index, beacon in enumerate(self.robot.connected_beacons):
+            pygame.draw.line(self._display_surf, RED, robot_pos, [beacon[0], beacon[1]])
+
+
+        # Draw sensors
+        # for index, sensor in enumerate(self.robot.sensors):
+        #     pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
+        #     textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
+        #     self._display_surf.blit(textsurface, sensor[2])
 
         # Draw the robot
         pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
