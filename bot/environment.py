@@ -6,6 +6,7 @@ from datetime import datetime
 from bot import robot as bot
 from bot import genetic as gen
 from bot import ann as ann
+from bot import beacon as bc
 import time
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
@@ -17,7 +18,6 @@ GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
-
 
 class Environment:
     """
@@ -100,21 +100,21 @@ class Environment:
         # Beacons
         # A beacon is placed at each wallcorner and is reperesented by an x and y coordinate [x, y]
         self.beacons = [
-            [50,50],
-            [750, 50],
-            [50, 750],
-            [750, 750],
+            bc.Beacon(50, 50),
+            bc.Beacon(750, 50),
+            bc.Beacon(50, 750),
+            bc.Beacon(750, 750),
 
-            [300, 300],
-            [300, 500],
-            [500, 300],
-            [500, 500]
+            bc.Beacon(300, 300),
+            bc.Beacon(300, 500),
+            bc.Beacon(500, 300),
+            bc.Beacon(500, 500)
         ]
 
         # Dust grid (a grid of integers representing the places cleaned by the robot)
         # cell value 0 means the robot has not been there yet (dirty)
         # cell value 1 means the robot has not been there (clean)
-        self.grid_size = 128  # Very resource intensive when graphics are enabled! keep low when running with graphics and turn up during simulation
+        self.grid_size = 128
         self.cleaned = 0
         self.dirt_sensor = 0
         self.dirt = [0] * self.grid_size
@@ -266,7 +266,7 @@ class Environment:
 
         # Draw beacons
         for b in self.beacons:
-            pygame.draw.circle(self._display_surf, RED, b, 5, 0)
+            pygame.draw.circle(self._display_surf, RED, (b.x, b.y), 5, 0)
 
         # Draw beacon connections
         robot_pos = (int(self.robot.posx), int(self.robot.posy))
@@ -411,11 +411,11 @@ class Environment:
                 print("This error is likely caused by the robot going off screen. Try lowering the time dilation")
             print('\033[0m' + "\n")
             return 0
-        except Exception as inst:
-            print('\033[91m' + "=== ERROR === Simulation failed with message: ")
-            print(inst)
-            print('\033[0m' + "\n")
-            return 0
+        # except Exception as inst:
+        #     print('\033[91m' + "=== ERROR === Simulation failed with message: ")
+        #     print(inst)
+        #     print('\033[0m' + "\n")
+        #     return 0
 
     def fitness(self):
         """

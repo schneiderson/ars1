@@ -58,6 +58,7 @@ if __name__ == "__main__":
             simulation = False
         elif args.mode == '2':
             simulation = True
+    simulation = False
     while simulation is None:
         print("=================================")
         print("Please select the execution mode:")
