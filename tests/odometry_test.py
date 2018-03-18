@@ -89,6 +89,8 @@ class TestOdometry(unittest.TestCase):
 
     def test_probabilities(self):
         odometry = od.odometry()
+        # set noise parameters
+        odometry.set_noise_params( [.1, .1, .1, .1] )
 
         pos_t0 = (0, 0, 0)          # current position
         pos_t1 = (1, 0, 0)          # position after move
@@ -106,10 +108,12 @@ class TestOdometry(unittest.TestCase):
 
     def test_sampling(self):
         odometry = od.odometry()
+        # set noise parameters
+        odometry.set_noise_params( [.1, .1, .1, .1] )
 
         pos_t0 = (0, 0, 0)          # current position
         u_t = [(0, 0, 0), (1, 0, 0)] # measured positions before and after move (from encoder data)
-        # get probability
+        # get position
         pose = odometry.sample_motion_model(u_t, pos_t0)
         self.assertTrue( math.fabs(pose[0] - u_t[1][0]) < .4 )
         self.assertTrue( math.fabs(pose[1]) < .4 )
@@ -117,7 +121,7 @@ class TestOdometry(unittest.TestCase):
         
         # set another prob func
         odometry.set_sample_func(od.sample_triang_dist)
-        # get probability
+        # get position
         pose = odometry.sample_motion_model(u_t, pos_t0)
         self.assertTrue( math.fabs(pose[0] - u_t[1][0]) < .4 )
         self.assertTrue( math.fabs(pose[1]) < .4 )

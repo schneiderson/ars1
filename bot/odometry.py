@@ -9,7 +9,7 @@ __author__ = 'Steffen Schneider'
 class odometry:
     def __init__(self, noise_parameters=None):
         # self.np: alpha 1-4 (error/noise parameters)
-        self.np = [.1, .1, .1, .1]
+        self.np = [.01, .02, .02, .02]
         if noise_parameters:
             self.np = noise_parameters
 
