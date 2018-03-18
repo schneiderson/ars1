@@ -113,16 +113,15 @@ class TestOdometry(unittest.TestCase):
         pose = odometry.sample_motion_model(u_t, pos_t0)
         self.assertTrue( math.fabs(pose[0] - u_t[1][0]) < .4 )
         self.assertTrue( math.fabs(pose[1]) < .4 )
-        self.assertTrue( math.fabs(pose[2]) < 30 )
+        self.assertTrue( math.fabs(pose[2]) < 25 )
         
         # set another prob func
-        odometry.set_prob_func(od.prob_triang_dist)
+        odometry.set_sample_func(od.sample_triang_dist)
         # get probability
         pose = odometry.sample_motion_model(u_t, pos_t0)
-        print(pose)
         self.assertTrue( math.fabs(pose[0] - u_t[1][0]) < .4 )
         self.assertTrue( math.fabs(pose[1]) < .4 )
-        self.assertTrue( math.fabs(pose[2]) < 30 )
+        self.assertTrue( math.fabs(pose[2]) < 25 )
 
 
 if __name__ == '__main__':
