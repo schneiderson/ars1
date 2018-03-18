@@ -5,6 +5,9 @@ __author__ = 'Olve Drageset, Andre Gramlich'
 
 
 def flatten_weights(list_of_mats):
+    """
+        Flatten the weights for storage
+    """
     flat_ndlist = []
     for arr in list_of_mats:
         flat_ndlist.append(arr.flatten().tolist())
@@ -13,8 +16,11 @@ def flatten_weights(list_of_mats):
 
 
 class NeuralNet:
-    def __init__(self, weights, nr_of_input_nodes=13, hidden_layers=0,
-                 hidden_layer_nodes=0, nr_of_outputs=2, recurrence=True):
+    def __init__(self, weights, nr_of_input_nodes=13, hidden_layers=1,
+                 hidden_layer_nodes=6, nr_of_outputs=2, recurrence=True):
+        """
+            Initialize the neural net
+        """
         self.nr_of_input_nodes = nr_of_input_nodes
         self.hidden_layers = hidden_layers
         self.hidden_layer_nodes = hidden_layer_nodes
@@ -28,6 +34,9 @@ class NeuralNet:
                 self.prev_out.append(0)
 
     def weights_as_mat(self):
+        """
+            Build matrices for neural net from the flat weights list
+        """
         weights = []
         split_count = self.nr_of_output_nodes
         # Initialize matrix from input layer to first layer

@@ -1,9 +1,12 @@
 ''' ROBOT MODULE '''
 import math
 from bot import kinematics as kin
+from bot import trilateration as tri
+from bot import beacon as bc
 
 __author__ = 'Camiel Kerkhofs'
 COLLISION_TOLERANCE = 0.001
+BEACON_COLLISION_TOLERANCE = 5
 
 class Robot:
     def __init__(self):
@@ -28,6 +31,7 @@ class Robot:
         self.sensor_max = 500
         self.dist_transformation_factor = 2
         self.sensors = [(0, 0, (self.posx, self.posy))] * 12
+        self.connected_beacons = []
         self.num_collisions = 0
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
 
@@ -40,6 +44,7 @@ class Robot:
         self.vel_right = 0
 
         self.sensors = [(0, 0, (self.posx, self.posy))] * 12
+        self.connected_beacons = []
         self.num_collisions = 0
 
     def set_robot_initial_position(self, x, y, angle):
@@ -71,6 +76,37 @@ class Robot:
         pos = kin.bot_calc_coordinate(self.posx, self.posy, self.angle, left_velocity, right_velocity,
                                       delta_time / 10, self.radius * 2)
         self.set_robot_position(pos[0], pos[1], pos[2])
+
+    def update_beacons(self, beacons, walls):
+        """
+            Update all beacon connections given a set of beacons and a set of walls
+        """
+
+        # Find beacons that are connected to the robot by a direct line of sight
+        connected_beacons = []  # [beacon_x, beacon_y, distance, bearing]
+        for beacon in beacons:
+            # Check collision points for each wall
+            connected = True
+            for wall in walls:
+                intersect = self.find_line_intersect(wall[0], wall[1], (self.posx, self.posy), (beacon.x, beacon.y))
+                if intersect:
+                    # Determine beacon distance to intersect
+                    distance = math.sqrt((intersect[0] - beacon.x) ** 2 + (intersect[1] - beacon.y) ** 2)
+                    if distance > BEACON_COLLISION_TOLERANCE:
+                        #print('Beacon ' + str(beacon) + ' intersects with wall ' + str(wall) + ' at point ' + str(intersect) + '. distance: ' + str(distance))
+                        connected = False
+            if connected:
+                # Determine distance+bearing to beacon and save beacon as connected
+                distance = math.sqrt((self.posx - beacon.x) ** 2 + (self.posy - beacon.y) ** 2)
+                bearing = math.atan2((beacon.y-self.posy), (beacon.x-self.posx))*180.0/math.pi
+                bearing = (bearing + 360) % 360
+
+                # The beacons X and Y position are saved only for rendering purposes.
+                # The algorithm only uses the distance and bearing for triangulation
+                connected_beacons.append(bc.Beacon(beacon.x, beacon.y, distance, bearing))
+        self.connected_beacons = connected_beacons
+
+        x = tri.triangulate(connected_beacons)
 
     def update_sensors(self, walls):
         """

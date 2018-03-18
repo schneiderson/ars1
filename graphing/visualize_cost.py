@@ -6,7 +6,10 @@ import numpy as np
 
 __author__: 'Steffen Schneider'
 
-
+"""
+Graph class
+ - enables to plot costs saved in files or during the simulation
+"""
 class Graph:
     def __init__(self, avg_cost = [], best_cost = []):
         self.fig = plt.figure()
@@ -31,8 +34,8 @@ class Graph:
         self.plot_cost()
 
     def add_costs(self, avg_cost, best_cost, animate=False):
-        self.avg_cost.append(avg_cost)
-        self.best_cost.append(best_cost)
+        self.avg_cost.append(abs(avg_cost))
+        self.best_cost.append(abs(best_cost))
         if animate: self.update_plot()
 
     def update_plot(self):
@@ -56,22 +59,31 @@ class Graph:
 Helper fuctions
 """
 def files_collect(path):
+    """
+    collect files from a directory
+    """
     for file in os.listdir(path):
         if os.path.isfile(os.path.join(path, file)):
             yield file
 
 def get_files_array(path):
+    """
+    get files as array
+    """
     files = []
     for file in files_collect(path):
         files.append(file)
     return files
 
 def transform_data(files):
+    """
+    transform data for plotting
+    """
     avg_cost = [0] * len(files)
     best_cost = [0] * len(files)
     for file in files:
         m = re.search('gen(\d{1,4})_cost(.\d*)_avg(.\d*)', file)
-        best_cost[int(m.group(1))-1] = int(m.group(2))
-        avg_cost[int(m.group(1))-1] = int(m.group(3))
+        best_cost[int(m.group(1))-1] = abs(int(m.group(2)))
+        avg_cost[int(m.group(1))-1] = abs(int(m.group(3)))
     return avg_cost, best_cost
 

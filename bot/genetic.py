@@ -17,7 +17,7 @@ def getcost(individual):
 def single_point_crossover(parent1, parent2):
     point = random.randrange(1, len(parent1.gene) - 1)
     gene1 = parent1.gene[0:point] + parent2.gene[point:]
-    gene2 = parent1.gene[0:point] + parent1.gene[point:]
+    gene2 = parent2.gene[0:point] + parent1.gene[point:]
     return [Individual(gene1), Individual(gene2)]
 
 
