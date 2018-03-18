@@ -5,6 +5,7 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
     A_t = B_t = C_t = np.array([[1, 0, 0],
                                 [0, 1, 0],
                                 [0, 0, 1]])
+
     C_t_transpose = np.transpose(C_t)
 
     Q_t = R_t = np.array([[.04, 0, 0],
@@ -13,7 +14,7 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
 
     # PREDICTION
     mew_bar_t = np.matmul(A_t, mew_t_minus_1) + np.matmul(B_t, u_t)
-    sigma_bar_t = np.matmul(np.matmul(A_t, sigma_t_minus_1), np.transpose(A_t))
+    sigma_bar_t = np.matmul(np.matmul(A_t, sigma_t_minus_1), np.transpose(A_t)) + R_t
 
     # CORRECTION
     K_t = np.matmul(
