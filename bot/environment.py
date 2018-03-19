@@ -209,7 +209,7 @@ class Environment:
 
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)
-        self.robot.update_beacons(self.beacons, self.walls)
+        # self.robot.update_beacons(self.beacons, self.walls)
         max_activation = self.robot.max_activation
         norm = closest_activation / max_activation
         self.activations.append(norm)
@@ -271,8 +271,10 @@ class Environment:
         # Draw beacon connections
         robot_pos = (int(self.robot.posx), int(self.robot.posy))
         for index, beacon in enumerate(self.robot.connected_beacons):
-            pygame.draw.line(self._display_surf, RED, robot_pos, [beacon[0], beacon[1]])
+            pygame.draw.line(self._display_surf, RED, robot_pos, [beacon.x, beacon.y])
 
+        # TODO Temp: (move to on_loop and remove display param)
+        self.robot.update_beacons(self.beacons, self.walls, self._display_surf)
 
         # Draw sensors
         # for index, sensor in enumerate(self.robot.sensors):

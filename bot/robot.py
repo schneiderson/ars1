@@ -77,7 +77,7 @@ class Robot:
                                       delta_time / 10, self.radius * 2)
         self.set_robot_position(pos[0], pos[1], pos[2])
 
-    def update_beacons(self, beacons, walls):
+    def update_beacons(self, beacons, walls, display=None):
         """
             Update all beacon connections given a set of beacons and a set of walls
         """
@@ -101,12 +101,16 @@ class Robot:
                 bearing = math.atan2((beacon.y-self.posy), (beacon.x-self.posx))*180.0/math.pi
                 bearing = (bearing + 360) % 360
 
+                # Make bearing relative to robots angle
+                # Subtract robots actual angle from the bearing because the sensor can not know the actual beacon angle
+                bearing = (bearing - self.angle) % 360
+
                 # The beacons X and Y position are saved only for rendering purposes.
                 # The algorithm only uses the distance and bearing for triangulation
                 connected_beacons.append(bc.Beacon(beacon.x, beacon.y, distance, bearing))
         self.connected_beacons = connected_beacons
 
-        x = tri.triangulate(connected_beacons)
+        x = tri.triangulate(connected_beacons, display)
 
     def update_sensors(self, walls):
         """
