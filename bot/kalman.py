@@ -1,10 +1,14 @@
 import numpy as np
 
+__author__ = "Olve Drageset, Andre Gramlich"
+
 
 def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
     A_t = B_t = C_t = np.array([[1, 0, 0],
                                 [0, 1, 0],
                                 [0, 0, 1]])
+
+    # TODO: Set B_t to be 3x2 matrix transforming 2X1 velocity vector to a 3x1 pose vector [x, y, theta]
 
     C_t_transpose = np.transpose(C_t)
 
