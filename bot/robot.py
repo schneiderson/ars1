@@ -195,7 +195,7 @@ class Robot:
 
                 # The robot is moved back along the angle of the current (infringing) sensor using the illegal distance
                 illegal_distance = (self.radius - closest_collision) + self.radius
-                corrected_position = tri.line_endpoint((sensor_end[0], sensor_end[1]), angle, illegal_distance)
+                corrected_position = tri.line_endpoint((sensor_end[0], sensor_end[1]), angle, -illegal_distance)
                 self.set_robot_position(corrected_position[0], corrected_position[1], self.angle)
 
                 # Restart sensor update to find potential sensors that might conflict with the new position

@@ -275,11 +275,12 @@ class Environment:
             pygame.draw.circle(self._display_surf, RED, (b.x, b.y), 5, 0)
 
         # Draw beacon connections
-        robot_pos = (int(self.robot.posx), int(self.robot.posy))
-        for index, beacon in enumerate(self.robot.connected_beacons):
-            pygame.draw.line(self._display_surf, RED, robot_pos, [beacon.x, beacon.y])
+        # robot_pos = (int(self.robot.posx), int(self.robot.posy))
+        # for index, beacon in enumerate(self.robot.connected_beacons):
+        #     pygame.draw.line(self._display_surf, RED, robot_pos, [beacon.x, beacon.y])
 
         # Draw sensors
+        robot_pos = (int(self.robot.posx), int(self.robot.posy))
         # for index, sensor in enumerate(self.robot.sensors):
         #     pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
         #     textsurface = game_font.render(str(index) + ": " + "{0:.0f}".format(sensor[1]), False, RED)
@@ -287,7 +288,7 @@ class Environment:
 
         # Draw the robot
         pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
-        robot_head = tri.line_endpoint((self.robot.posx, self.robot.posy), self.robot.angle, self.robot.radius)
+        robot_head = tri.line_endpoint(robot_pos, self.robot.angle, self.robot.radius)
         pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
 
         # Beacon triangulation; X=(x, y, theta)
