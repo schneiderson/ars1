@@ -2,6 +2,7 @@
 from bot import kinematics as kin
 from bot import trigonometry as tri
 from bot import beacon as bc
+from bot import odometry as od
 import random
 
 __author__ = 'Camiel Kerkhofs'
@@ -11,12 +12,19 @@ BEACON_COLLISION_TOLERANCE = 5
 
 class Robot:
     def __init__(self):
-        
-        # Robot position
+        # Odometry
+        self.odometry = od.odometry()
+
+        # Robot positions
         self.radius = 30
-        self.initial_posx = self.posx = 400.0
-        self.initial_posy = self.posy = 175.0
-        self.initial_angle = self.angle = 0
+        self.initial_posx = self.posx = self.prev_bel_posx = self.bel_posx = 400.0
+        self.initial_posy = self.posy = self.prev_bel_posy = self.bel_posy = 175.0
+        self.initial_angle = self.angle = self.prev_bel_angle = self.bel_angle = 0
+
+        # odometry based position
+        self.od_posx = None
+        self.od_posy = None
+        self.od_angle = None
         
         # Velocity
         self.vel_left = 0
@@ -37,9 +45,13 @@ class Robot:
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
 
     def reset(self):
-        self.posx = self.initial_posx
-        self.posy = self.initial_posy
-        self.angle = self.initial_angle
+        self.posx = self.prev_bel_posx = self.bel_posx = self.initial_posx
+        self.posy = self.prev_bel_posy = self.bel_posy = self.initial_posy
+        self.angle = self.prev_bel_angle = self.bel_angle = self.initial_angle
+        
+        self.od_posx = None
+        self.od_posy = None
+        self.od_angle = None
 
         self.vel_left = 0
         self.vel_right = 0
@@ -58,6 +70,19 @@ class Robot:
         self.posy = y
         self.angle = angle
 
+    def set_robot_previous_believed_position(self, x, y, angle):
+        self.prev_bel_posx = x
+        self.prev_bel_posy = y
+        self.prev_bel_angle = angle
+
+    def set_robot_odometry_position(self, x, y, angle):
+        self.od_posx = x
+        self.od_posy = y
+        self.od_angle = angle
+
+    def get_robot_position(self):
+        return (self.posx, self.posy, self.angle)
+
     def set_velocity(self, left, right):
         self.vel_left = left
         self.vel_right = right
@@ -72,11 +97,29 @@ class Robot:
             # Delta_t exceeds robot radius; wall detection becomes unreliable at this point
             raise ValueError('movement delta_time of ' + str(delta_time) + 'ms exceeds robot radius. This might be caused by a high time_dilation or a screen drag. (Do not drag the screen!)')
         
+        # update actual position
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
         pos = kin.bot_calc_coordinate(self.posx, self.posy, self.angle, left_velocity, right_velocity,
                                       delta_time / 10, self.radius * 2)
+
+
+        new_pos_bel = kin.bot_calc_coordinate(self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity,
+                                      delta_time / 10, self.radius * 2)
+
+        # set odometry pos
+        self.set_robot_odometry_position(new_pos_bel[0], new_pos_bel[1], new_pos_bel[2])
+        # store previous position before updating current position
         self.set_robot_position(pos[0], pos[1], pos[2])
+        
+
+    def get_odometry_based_value(self):
+        ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle), (self.od_posx, self.od_posy, self.od_angle)]
+        x = (self.od_posx, self.od_posy, self.od_angle)
+        sample_pos = self.odometry.sample_motion_model(ut, x)
+        return sample_pos
+        
+
 
     def update_beacons(self, beacons, walls):
         """

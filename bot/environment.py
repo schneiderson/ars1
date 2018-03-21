@@ -208,6 +208,11 @@ class Environment:
         # Update robot position
         self.robot.move_robot(delta_t)
 
+        # get pose based on odometry
+        pose_od = self.robot.get_odometry_based_value()
+        #print("odometry: ", pose_od)
+        #print("actual: ", self.robot.get_robot_position())
+
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)
         # self.robot.update_beacons(self.beacons, self.walls)
@@ -286,12 +291,20 @@ class Environment:
         pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
 
         # Beacon triangulation; X=(x, y, theta)
-        # TODO Temp: (move to on_loop)
+        # TODO Temp: (move to Kalman filter)
         X = self.robot.update_beacons(self.beacons, self.walls)
         # Draws the triangulation outcome as a smaller white robot:
         pygame.draw.circle(self._display_surf, WHITE, (int(X[0]), int(X[1])), 15, 0)
         robot_head = tri.line_endpoint((int(X[0]), int(X[1])), X[2], 15)
         pygame.draw.line(self._display_surf, BLACK, (int(X[0]), int(X[1])), robot_head, 2)
+
+        # Odometry measurement
+        if self.robot.od_posx is not None:
+            # TODO Temp: (move to Kalman filter)
+            # Draws the odometry outcome as a smaller red robot:
+            pygame.draw.circle(self._display_surf, RED, (int(self.robot.od_posx), int(self.robot.od_posy)), 15, 0)
+            robot_head = tri.line_endpoint((int(self.robot.od_posx), int(self.robot.od_posy)), self.robot.od_angle, 15)
+            pygame.draw.line(self._display_surf, BLACK,  (int(self.robot.od_posx), int(self.robot.od_posy)), robot_head, 2)
 
         # Draw debug metrics
         for index, info in enumerate(debug):
