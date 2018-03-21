@@ -1,66 +1,85 @@
 ''' TRIGONOMETRY MODULE '''
 import math
 import pygame
+from itertools import groupby
 
 __author__ = 'Camiel Kerkhofs'
 
 TRILATERATION_TOLLERANCE = 0.00001
 
-def triangulate_beacons(beacons, display):
+def triangulate_beacons(beacons, display, robot):
     """
         Given a set of beacons amd the distance to each beacon, finds the point where they all intersect
     """
 
     # Temp: only use 3 beacons
-    beacons = beacons[:3]
+    # beacons = beacons[:3]
 
     # Triangulate connected beacons
     inner_points = []
     for index, beacon in enumerate(beacons):
-        # triangulate with all other beacons
+        # Triangulate with all other beacons
         for index_2, beacon_2 in enumerate(beacons):
             if index_2 > index:
-                # distance between beacon 1 and robot
+                # Distance between beacon 1 and robot
                 d1 = beacon.distance
 
-                # distance between beaacon 2 and robot
+                # Distance between beaacon 2 and robot
                 d2 = beacon_2.distance
 
-                # distance between 2 beacons (uses the bearing and distance of each beacon; law of cosines)
+                # Angle between d1 and d2 relative to the robot
                 angle = abs(beacon_2.bearing - beacon.bearing)
-                if angle>180:
+                if angle > 180:
                     angle = 360-angle
+
+                # Distance between the 2 beacons
                 a = law_of_cosines(d1, d2, angle)
 
+                # distance between 2 beacons (uses the bearing and distance of each beacon; law of cosines)
                 x = (a**2 + d1**2 - d2**2) / (2*a)
                 y = math.sqrt(d1**2 - x**2)
-
-                # TODO: Normalize point to 0 degrees bearing using the known position of beacon 1 and beacon 2
-                theta = 0
-
-                # Angle between the 2 beacons
-                beacon_angle = line_angle((beacon.x, beacon.y), (beacon_2.x, beacon_2.y)) % 90
-
-                # Angle from beacon 1 to robot relative to the 2 beacons
-                beacon_robot_angle = law_of_sines(d1, x, y)
+                    # theta = 0
 
                 # We assume the position of the beacons is derived from an internal map.
                 # We use the position of beacon 1 and beacon 2 to get the angle between these beacons
-                # Using the law of cosines, solve for angle gamma and subtract this from the angle between the beacons to get the angle to the x axis
+                # Angle between the 2 beacons
+                beacon_angle = line_angle((beacon_2.x, beacon_2.y), (beacon.x, beacon.y))
+
+                # Get the 2 possible robot positions from x, y, beacon1 and the angle between the 2 beacons
+                x_endpoint = line_endpoint((beacon.x, beacon.y), beacon_angle, x)
+                y_endpoint = line_endpoint(x_endpoint, beacon_angle+90, y)
+                y_endpoint2 = line_endpoint(x_endpoint, beacon_angle-90, y)
+
+                # Append possible endpoints to list
+                inner_points.append([round(y_endpoint[0]), round(y_endpoint[1])])
+                inner_points.append([round(y_endpoint2[0]), round(y_endpoint2[1])])
 
                 #Temp:
-                # if display is not None and index==0 and index_2==1:
-                #     print('drawing temp line for beacon0 at ' + str((beacon.x, beacon.y, beacon.bearing)) + ' and beacon1 at ' + str((beacon_2.x, beacon_2.y, beacon_2.bearing)))
-                #     endpoint = line_endpoint((beacon.x, beacon.y), 0, x)
-                #     pygame.draw.line(display, (255,0,0), (beacon.x,beacon.y), endpoint, 1)
-                #     # pygame.draw.line(display, (255,0,0), (beacon.x,beacon.y), (10,10), y)
+                # if display is not None and index==1 and index_2==2:
+                #     pygame.draw.line(display, (255,0,0), (beacon.x,beacon.y), x_endpoint, 1)
+                #     pygame.draw.line(display, (255,0,0), y_endpoint2, y_endpoint, 1)
 
-                #TODO: inner points are relative to beacon 1, how do we combine these beacons
-
-
-                inner_points.append([x, y, theta])
+                # beacon_robot_angle = law_of_sines(d1, a, d2)
+				#
+                # if beacon_angle < 90:
+                #     angle_x_axis = abs(beacon_angle - beacon_robot_angle)
+                # elif beacon_angle < 180:
+                #     angle_x_axis = 90 - (beacon_angle % 90) - beacon_robot_angle
+                # elif beacon_angle < 270:
+                #     angle_x_axis = (beacon_angle % 90) - beacon_robot_angle
+                # else:
+                #     angle_x_axis = 90 - (beacon_angle % 90) - beacon_robot_angle
+                # angle_y_axis = 180 - (90 + angle_x_axis)
+				#
+                # x = d1 * math.sin(math.radians(angle_y_axis)) / math.sin(math.radians(90))
+                # y = d1 * math.sin(math.radians(angle_x_axis)) / math.sin(math.radians(90))
 
     #TODO: avarage the inner points..
+    grouped = []
+    for key, group in groupby(inner_points, key=lambda x: x):
+        grouped.append([key, sum(j for i, j in group)])
+
+    #TODO: apply gaussion to beacon distance measure
 
 
     return inner_points
@@ -118,7 +137,7 @@ def law_of_sines(a, b, c):
 
 def law_of_cosines(a, b, angle):
     """
-        Return the side of a triangle given its sides a, b and its angle (Law of cosines)
+        Return the side of a triangle given its sides a, b and the angle between them (Law of cosines)
     """
     return math.sqrt(
                     a**2 +

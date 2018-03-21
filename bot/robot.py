@@ -109,7 +109,7 @@ class Robot:
                 connected_beacons.append(bc.Beacon(beacon.x, beacon.y, distance, bearing))
         self.connected_beacons = connected_beacons
 
-        X = tri.triangulate_beacons(connected_beacons, display)
+        X = tri.triangulate_beacons(connected_beacons, display, self)
         return X
 
     def update_sensors(self, walls):
