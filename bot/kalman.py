@@ -4,7 +4,7 @@ __author__ = "Olve Drageset, Andre Gramlich"
 
 ''' mew_t_minus_1 is the pose at the previous frame
  sigma_t_minus_1 is the covariance matrix from the previous frame
- u_t is the [delta_x, delta_y, delta_theta] since t-1 according to our odometry model
+ u_t is the change in position [delta_x, delta_y, delta_theta] since t-1 according to our knowledge of our wheels
  z_t is the position as predicted by the sensor data '''
 
 
@@ -41,12 +41,13 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
     return mew_t, sigma_t  # Prediction of pose at time t, covariance at time t
 
 
-mew_t_minus_1 = np.array([1, 1, 1])
-sigma_t_minus_1 = np.array([[2, 0, 0],
-                            [0, 2, 0],
-                            [0, 0, 2]])
-u_t = np.array([1, 1, 1])
-z_t = np.array([2, 2, 1])
+mew_t_minus_1 = np.array([0, 0, 0])  # Starting position at t_0
+# At the beginning we are very certain of our position, so no covariance
+sigma_t_minus_1 = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
+u_t = np.array([0, 0, 0])  # Movement due to control from t_0 to t_1
+z_t = np.array([10, 10, 0])  # Observed position at t_1
 
 mew_t, sigma_t = kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t)
 
