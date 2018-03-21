@@ -207,6 +207,11 @@ class Environment:
         # Update robot position
         self.robot.move_robot(delta_t)
 
+        # get pose based on odometry
+        pose_od = self.robot.get_odometry_based_value()
+        #print("odometry: ", pose_od)
+        #print("actual: ", self.robot.get_robot_position())
+
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)
         # self.robot.update_beacons(self.beacons, self.walls)
