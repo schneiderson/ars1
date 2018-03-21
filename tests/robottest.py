@@ -8,19 +8,6 @@ ROBOT = bot.Robot()
 
 class TestRobot(unittest.TestCase):
 
-    def test_line_intersection(self):
-        tmp = ROBOT.find_line_intersect((10,10),(20,10),(10,20),(20,20))
-        self.assertEqual(tmp, False)
-        
-        tmp = ROBOT.find_line_intersect((10,10),(20,20),(50,5),(20,18))
-        self.assertEqual(tmp, False)
-        
-        tmp = ROBOT.find_line_intersect((10,10),(20,20),(10,8),(20,22))
-        self.assertEqual(tmp, (15, 15))
-        
-        tmp = ROBOT.find_line_intersect((10,10),(20,30),(10,0),(20,40))
-        self.assertEqual(tmp, (15, 20))
-
     def test_sensors_update(self):
         walls = [
             [(50, 50), (750, 50)],
