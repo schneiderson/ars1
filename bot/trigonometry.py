@@ -5,26 +5,32 @@ from itertools import groupby
 
 __author__ = 'Camiel Kerkhofs'
 
-TRILATERATION_TOLLERANCE = 0.00001
-
-def triangulate_beacons(beacons, display, robot):
+def triangulate_beacons(beacons):
     """
-        Given a set of beacons amd the distance to each beacon, finds the point where they all intersect
+        Given a set of beacons and the distance to each beacon, finds the point where they all intersect.
+
+        We assume the real position of each beacon is known from an internal map.
+        All other information is relative to the robot and is noisy (distance and bearing to each beacon).
+            input: [(beacon_1.x, beacon_1.y, bearing, distance), ..., (beacon_n.x, beacon_n.y, bearing, distance)]
+
+        By triangulating the beacons using their known location and the robots orientation towards them
+        we can find a noisy estimate of the real x, y and theta values of the robot.
+            returns tuple (x, y, theta)
     """
 
-    # Temp: only use 3 beacons
-    # beacons = beacons[:3]
+    if len(beacons) < 3:
+        return False
 
     # Triangulate connected beacons
     inner_points = []
     for index, beacon in enumerate(beacons):
-        # Triangulate with all other beacons
+        # Triangulate the beacon with all other beacons
         for index_2, beacon_2 in enumerate(beacons):
             if index_2 > index:
                 # Distance between beacon 1 and robot
                 d1 = beacon.distance
 
-                # Distance between beaacon 2 and robot
+                # Distance between beacon 2 and robot
                 d2 = beacon_2.distance
 
                 # Angle between d1 and d2 relative to the robot
@@ -35,54 +41,74 @@ def triangulate_beacons(beacons, display, robot):
                 # Distance between the 2 beacons
                 a = law_of_cosines(d1, d2, angle)
 
-                # distance between 2 beacons (uses the bearing and distance of each beacon; law of cosines)
+                # Robot position relative to the 2 beacons
                 x = (a**2 + d1**2 - d2**2) / (2*a)
                 y = math.sqrt(d1**2 - x**2)
-                    # theta = 0
 
                 # We assume the position of the beacons is derived from an internal map.
                 # We use the position of beacon 1 and beacon 2 to get the angle between these beacons
-                # Angle between the 2 beacons
+                # Real angle of the 2 beacons
                 beacon_angle = line_angle((beacon_2.x, beacon_2.y), (beacon.x, beacon.y))
 
                 # Get the 2 possible robot positions from x, y, beacon1 and the angle between the 2 beacons
                 x_endpoint = line_endpoint((beacon.x, beacon.y), beacon_angle, x)
-                y_endpoint = line_endpoint(x_endpoint, beacon_angle+90, y)
-                y_endpoint2 = line_endpoint(x_endpoint, beacon_angle-90, y)
+                xy_endpoint_pos = line_endpoint(x_endpoint, beacon_angle+90, y)
+                xy_endpoint_neg = line_endpoint(x_endpoint, beacon_angle-90, y)
 
-                # Append possible endpoints to list
-                inner_points.append([round(y_endpoint[0]), round(y_endpoint[1])])
-                inner_points.append([round(y_endpoint2[0]), round(y_endpoint2[1])])
+                # Append the possible endpoints to the list
+                inner_points.append([(round(xy_endpoint_pos[0]), round(xy_endpoint_pos[1])), (round(xy_endpoint_neg[0]), round(xy_endpoint_neg[1]))])
 
-                #Temp:
-                # if display is not None and index==1 and index_2==2:
-                #     pygame.draw.line(display, (255,0,0), (beacon.x,beacon.y), x_endpoint, 1)
-                #     pygame.draw.line(display, (255,0,0), y_endpoint2, y_endpoint, 1)
+    # Filter all possible inner points.
+    # Determine whether X or X' is valid given all other beacon observations (this is why we need at least 3 beacons)
+    believe_point = None
+    believe_points = []
+    for i in range(len(inner_points)):
 
-                # beacon_robot_angle = law_of_sines(d1, a, d2)
-				#
-                # if beacon_angle < 90:
-                #     angle_x_axis = abs(beacon_angle - beacon_robot_angle)
-                # elif beacon_angle < 180:
-                #     angle_x_axis = 90 - (beacon_angle % 90) - beacon_robot_angle
-                # elif beacon_angle < 270:
-                #     angle_x_axis = (beacon_angle % 90) - beacon_robot_angle
-                # else:
-                #     angle_x_axis = 90 - (beacon_angle % 90) - beacon_robot_angle
-                # angle_y_axis = 180 - (90 + angle_x_axis)
-				#
-                # x = d1 * math.sin(math.radians(angle_y_axis)) / math.sin(math.radians(90))
-                # y = d1 * math.sin(math.radians(angle_x_axis)) / math.sin(math.radians(90))
+        # First loop execution: find initial believe point using the first 2 beacon pairs
+        if len(believe_points) == 0 and i+1 < len(inner_points):
+            p1 = inner_points[i]
+            p2 = inner_points[i+1]
 
-    #TODO: avarage the inner points..
-    grouped = []
-    for key, group in groupby(inner_points, key=lambda x: x):
-        grouped.append([key, sum(j for i, j in group)])
+            # The 2 points that are closest to each other in the 2x2 matrix are the correct X/X' point
+            dist_diffs = [
+                line_distance(p1[0], p2[0]),
+                line_distance(p1[0], p2[1]),
+                line_distance(p1[1], p2[0]),
+                line_distance(p1[1], p2[1])
+            ]
+            temp = dist_diffs.index(min(dist_diffs))
+            if temp < 2:
+                believe_point = p1[0]
+                believe_points.append(p1[0])
+                if temp == 0:
+                    believe_points.append(p2[0])
+                elif temp == 1:
+                    believe_points.append(p2[1])
+            elif temp < 4:
+                believe_point = p1[1]
+                believe_points.append(p1[1])
+                if temp == 2:
+                    believe_points.append(p2[0])
+                elif temp == 3:
+                    believe_points.append(p2[1])
 
-    #TODO: apply gaussion to beacon distance measure
+        # Compare other beacon observations to the believe point
+        else:
+            if line_distance(inner_points[i][0], believe_point) < line_distance(inner_points[i][1], believe_point):
+                believe_points.append(inner_points[i][0])
+            else:
+                believe_points.append(inner_points[i][1])
 
+    # Average the believe points
+    # Due to noisy distance measures, our position estimates can vary.
+    # We take the middle of this area; more beacons = higher accuracy
+    center = get_polygon_center(believe_points)
 
-    return inner_points
+    # Get the robots real angle using the known beacons and the calculated robot position
+    theta_real = line_angle((beacons[0].x, beacons[0].y), (center[0], center[1]))  # angle between beacon 1 and robot
+    theta = theta_real - beacons[0].bearing  # Actual robot pose given its relative angle to beacon 1
+
+    return (center[0], center[1], theta)
 
 def line_intersect(a_p1, a_p2, b_p1, b_p2, tolerance = 0.001):
     """
@@ -159,3 +185,16 @@ def line_angle(p1, p2):
     """
     angle = math.atan2((p1[1]-p2[1]), (p1[0]-p2[0])) * 180.0/math.pi
     return (angle + 360) % 360
+
+def get_polygon_center(points):
+    """
+        Returns the center of a set of points
+    """
+    center = [0, 0]
+    num = len(points)
+    for i in range(num):
+        center[0] += points[i][0]
+        center[1] += points[i][1]
+    center[0] /= num
+    center[1] /= num
+    return center

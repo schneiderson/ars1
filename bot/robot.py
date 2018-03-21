@@ -1,8 +1,8 @@
 ''' ROBOT MODULE '''
-import math
 from bot import kinematics as kin
 from bot import trigonometry as tri
 from bot import beacon as bc
+import random
 
 __author__ = 'Camiel Kerkhofs'
 
@@ -78,7 +78,7 @@ class Robot:
                                       delta_time / 10, self.radius * 2)
         self.set_robot_position(pos[0], pos[1], pos[2])
 
-    def update_beacons(self, beacons, walls, display=None):
+    def update_beacons(self, beacons, walls):
         """
             Update all beacon connections given a set of beacons and a set of walls
         """
@@ -98,7 +98,9 @@ class Robot:
                         connected = False
             if connected:
                 # Determine distance+bearing from robot to beacon
-                distance = tri.line_distance((beacon.x, beacon.y), (self.posx, self.posy))
+                # TODO: apply gaussion to beacon distance measure instead of random range
+                distance_real = tri.line_distance((beacon.x, beacon.y), (self.posx, self.posy))
+                distance_noisy = distance_real + (random.randrange(0, int(distance_real))*0.1)
                 bearing = tri.line_angle((beacon.x, beacon.y), (self.posx, self.posy))
 
                 # Make bearing relative to robots angle
@@ -106,10 +108,10 @@ class Robot:
                 bearing = (bearing - self.angle) % 360
 
                 # Append the beacon to the list of connected beacons for future reference
-                connected_beacons.append(bc.Beacon(beacon.x, beacon.y, distance, bearing))
+                connected_beacons.append(bc.Beacon(beacon.x, beacon.y, distance_noisy, bearing))
         self.connected_beacons = connected_beacons
 
-        X = tri.triangulate_beacons(connected_beacons, display, self)
+        X = tri.triangulate_beacons(connected_beacons)
         return X
 
     def update_sensors(self, walls):

@@ -7,6 +7,7 @@ from bot import robot as bot
 from bot import genetic as gen
 from bot import ann as ann
 from bot import beacon as bc
+from bot import trigonometry as tri
 import time
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
@@ -146,7 +147,7 @@ class Environment:
             self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
         self.robot.update_sensors(self.walls)
-        self.robot.update_beacons(self.beacons, self.walls)
+        # self.robot.update_beacons(self.beacons, self.walls)
         self.on_render()
 
     def on_event(self, event):
@@ -273,9 +274,6 @@ class Environment:
         for index, beacon in enumerate(self.robot.connected_beacons):
             pygame.draw.line(self._display_surf, RED, robot_pos, [beacon.x, beacon.y])
 
-        # TODO Temp: (move to on_loop and remove display param)
-        self.robot.update_beacons(self.beacons, self.walls, self._display_surf)
-
         # Draw sensors
         # for index, sensor in enumerate(self.robot.sensors):
         #     pygame.draw.line(self._display_surf, RED, robot_pos, sensor[2])
@@ -284,11 +282,16 @@ class Environment:
 
         # Draw the robot
         pygame.draw.circle(self._display_surf, BLUE, robot_pos, self.robot.radius, 0)
-        theta_rad = math.radians(self.robot.angle)
-        robot_head = \
-            self.robot.posx + self.robot.radius * math.cos(theta_rad), \
-            self.robot.posy + self.robot.radius * math.sin(theta_rad)
+        robot_head = tri.line_endpoint((self.robot.posx, self.robot.posy), self.robot.angle, self.robot.radius)
         pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
+
+        # Beacon triangulation; X=(x, y, theta)
+        # TODO Temp: (move to on_loop)
+        X = self.robot.update_beacons(self.beacons, self.walls)
+        # Draws the triangulation outcome as a smaller white robot:
+        pygame.draw.circle(self._display_surf, WHITE, (int(X[0]), int(X[1])), 15, 0)
+        robot_head = tri.line_endpoint((int(X[0]), int(X[1])), X[2], 15)
+        pygame.draw.line(self._display_surf, BLACK, (int(X[0]), int(X[1])), robot_head, 2)
 
         # Draw debug metrics
         for index, info in enumerate(debug):
