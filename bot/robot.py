@@ -140,10 +140,12 @@ class Robot:
                         #print('Beacon ' + str(beacon) + ' intersects with wall ' + str(wall) + ' at point ' + str(intersect) + '. distance: ' + str(distance))
                         connected = False
             if connected:
-                # Determine distance+bearing from robot to beacon
-                # TODO: apply gaussion to beacon distance measure instead of random range
+                # Get noisy distance measure from robot to beacon
                 distance_real = tri.line_distance((beacon.x, beacon.y), (self.posx, self.posy))
-                distance_noisy = distance_real + (random.randrange(0, int(distance_real))*0.1)
+                sigma = distance_real*0.1
+                distance_noisy = random.gauss(distance_real, sigma)
+
+                # Determine bearing from robot to beacon
                 bearing = tri.line_angle((beacon.x, beacon.y), (self.posx, self.posy))
 
                 # Make bearing relative to robots angle
