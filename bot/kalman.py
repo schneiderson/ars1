@@ -26,6 +26,7 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
     # PREDICTION
     # Set our predicted position according to our old position, velocity, and estimated change due to control
     mew_bar_t = np.matmul(A_t, mew_t_minus_1) + np.matmul(B_t, u_t)
+    mew_bar_t[2] = mew_bar_t[2] % 360
     # Set our new covariance matrix based on our estimated error in u_t
     sigma_bar_t = np.matmul(np.matmul(A_t, sigma_t_minus_1), np.transpose(A_t)) + R_t
 
@@ -35,6 +36,7 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
         np.linalg.inv(np.matmul(np.matmul(C_t, sigma_bar_t), C_t_transpose) + Q_t))
     # Correct our predicted position due to our sensor observation
     mew_t = mew_bar_t + np.matmul(K_t, z_t - np.matmul(C_t, mew_bar_t))
+    mew_t[2] = mew_t[2] % 360
     # Correct our covariance matrix due to the difference between our prediction and correction due to sensor data
     sigma_t = np.matmul(np.identity(3) - np.matmul(K_t, C_t), sigma_bar_t)
 
