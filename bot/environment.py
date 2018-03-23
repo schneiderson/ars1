@@ -206,7 +206,7 @@ class Environment:
             self.rotation_speeds.append(vel_lr)
 
         # Update robot position
-        self.robot.move_robot(delta_t)
+        self.robot.move_robot(delta_t, self.beacons, self.walls)
 
         # get pose based on odometry
         pose_od = self.robot.get_odometry_based_value()
@@ -300,12 +300,12 @@ class Environment:
         pygame.draw.line(self._display_surf, BLACK, (int(X[0]), int(X[1])), robot_head, 2)
 
         # Odometry measurement
-        if self.robot.od_posx is not None:
+        if self.robot.bel_posx is not None:
             # TODO Temp: (move to Kalman filter)
             # Draws the odometry outcome as a smaller red robot:
-            pygame.draw.circle(self._display_surf, RED, (int(self.robot.od_posx), int(self.robot.od_posy)), 15, 0)
-            robot_head = tri.line_endpoint((int(self.robot.od_posx), int(self.robot.od_posy)), self.robot.od_angle, 15)
-            pygame.draw.line(self._display_surf, BLACK,  (int(self.robot.od_posx), int(self.robot.od_posy)), robot_head, 2)
+            pygame.draw.circle(self._display_surf, RED, (int(self.robot.bel_posx), int(self.robot.bel_posy)), 15, 0)
+            robot_head = tri.line_endpoint((int(self.robot.bel_posx), int(self.robot.bel_posy)), self.robot.bel_angle, 15)
+            pygame.draw.line(self._display_surf, BLACK,  (int(self.robot.bel_posx), int(self.robot.bel_posy)), robot_head, 2)
 
         # Draw debug metrics
         for index, info in enumerate(debug):
@@ -398,7 +398,7 @@ class Environment:
                     self.delta_t = 200
 
             if start_x != 0 and start_y != 0:
-                self.robot.set_robot_position(start_x, start_y, start_angle)
+                self.robot.set_robot_initial_position(start_x, start_y, start_angle)
 
             if self.on_init() == False:
                 # Has no return value but will return False if pygame library encounters an internal error

@@ -9,7 +9,7 @@ __author__ = 'Steffen Schneider'
 class odometry:
     def __init__(self, noise_parameters=None):
         # self.np: alpha 1-4 (error/noise parameters)
-        self.np = [.01, .02, .02, .02]
+        self.np = [.001, .001, .001, .001]
         if noise_parameters:
             self.np = noise_parameters
 
@@ -71,8 +71,9 @@ class odometry:
         x_prime = pos[0] + d_hat_trans * math.cos(math.radians(pos[2]) + d_hat_rot1)
         y_prime = pos[1] + d_hat_trans * math.sin(math.radians(pos[2]) + d_hat_rot1)
         angle_prime = math.radians(pos[2]) + d_hat_rot1 + d_hat_rot2
+        angle = math.degrees(angle_prime) % 360
 
-        return (x_prime, y_prime, math.degrees(angle_prime))
+        return (x_prime, y_prime, angle)
 
 
 ''' Helper function '''

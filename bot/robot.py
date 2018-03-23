@@ -3,6 +3,8 @@ from bot import kinematics as kin
 from bot import trigonometry as tri
 from bot import beacon as bc
 from bot import odometry as od
+from bot import kalman as kal
+import numpy as np
 import random
 
 __author__ = 'Camiel Kerkhofs'
@@ -43,6 +45,10 @@ class Robot:
         self.connected_beacons = []
         self.num_collisions = 0
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
+        self.beacon_dist_noise=0.1
+        self.sigma = np.array([[0, 0, 0],
+                                [0, 0, 0],
+                                [0, 0, 0]])
 
     def reset(self):
         self.posx = self.prev_bel_posx = self.bel_posx = self.initial_posx
@@ -60,10 +66,14 @@ class Robot:
         self.connected_beacons = []
         self.num_collisions = 0
 
+        self.sigma = np.array([[0, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 0]])
+
     def set_robot_initial_position(self, x, y, angle):
-        self.initial_posx = x
-        self.initial_posy = y
-        self.initial_angle = angle
+        self.posx = self.prev_bel_posx = self.bel_posx = self.initial_posx = x
+        self.posy = self.prev_bel_posy = self.bel_posy = self.initial_posy = y
+        self.angle = self.prev_bel_angle = self.bel_angle = self.initial_angle = angle
 
     def set_robot_position(self, x, y, angle):
         self.posx = x
@@ -74,6 +84,11 @@ class Robot:
         self.prev_bel_posx = x
         self.prev_bel_posy = y
         self.prev_bel_angle = angle
+    
+    def set_robot_believed_position(self, x, y, angle):
+        self.bel_posx = x
+        self.bel_posy = y
+        self.bel_angle = angle
 
     def set_robot_odometry_position(self, x, y, angle):
         self.od_posx = x
@@ -83,11 +98,20 @@ class Robot:
     def get_robot_position(self):
         return (self.posx, self.posy, self.angle)
 
+    def get_robot_previous_bel_position(self):
+        return (self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle)
+
+    def get_robot_bel_position(self):
+        return (self.bel_posx, self.bel_posy, self.bel_angle)
+
+    def get_robot_od_position(self):
+        return (self.od_posx, self.od_posy, self.od_angle)
+
     def set_velocity(self, left, right):
         self.vel_left = left
         self.vel_right = right
 
-    def move_robot(self, delta_time):
+    def move_robot(self, delta_time, beacons, walls):
         """
             move the robot using the given delta time
             vel_right and vel_left are switched on purpose to compensate for the pygame coordinate system (y-axis is flipped, with 0,0 point being top left)
@@ -111,6 +135,19 @@ class Robot:
         self.set_robot_odometry_position(new_pos_bel[0], new_pos_bel[1], new_pos_bel[2])
         # store previous position before updating current position
         self.set_robot_position(pos[0], pos[1], pos[2])
+
+        mew_t, self.sigma = kal.kalman_filter(self.get_robot_previous_bel_position(), self.sigma, self.get_odometry_based_value(), self.update_beacons(beacons, walls) )
+        # update believed pos
+        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
+        self.set_robot_believed_position(mew_t[0], mew_t[1], mew_t[2])
+        
+        print("----------------")
+        print("beacons: ", self.update_beacons(beacons, walls))
+        print("od: ", self.get_robot_od_position())
+        print("od_error: ", self.get_odometry_based_value())
+        print("believed: ", self.get_robot_bel_position())
+        print("actual: ",self.get_robot_position())
+        print("----------------")
         
 
     def get_odometry_based_value(self):
@@ -142,7 +179,7 @@ class Robot:
             if connected:
                 # Get noisy distance measure from robot to beacon
                 distance_real = tri.line_distance((beacon.x, beacon.y), (self.posx, self.posy))
-                sigma = distance_real*0.1
+                sigma = distance_real * self.beacon_dist_noise
                 distance_noisy = random.gauss(distance_real, sigma)
 
                 # Determine bearing from robot to beacon
