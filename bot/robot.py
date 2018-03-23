@@ -154,7 +154,7 @@ class Robot:
         ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle), (self.od_posx, self.od_posy, self.od_angle)]
         x = (self.od_posx, self.od_posy, self.od_angle)
         sample_pos = self.odometry.sample_motion_model(ut, x)
-        return sample_pos
+        return (sample_pos[0] - self.prev_bel_posx, sample_pos[1] - self.prev_bel_posy, sample_pos[2] - self.prev_bel_angle)
         
 
 
