@@ -48,8 +48,8 @@ def kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t):
 #                             [0, 0, 0]])
 # u_t = np.array([0, 0, 0])  # Movement due to control from t_0 to t_1
 # z_t = np.array([10, 10, 0])  # Observed position at t_1
-
+#
 # mew_t, sigma_t = kalman_filter(mew_t_minus_1, sigma_t_minus_1, u_t, z_t)
-
+#
 # print(f"mew_t: {mew_t}")
 # print(f"sigma_t: \n{sigma_t}")
