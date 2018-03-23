@@ -19,6 +19,8 @@ GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
+GREEN = (34,139,34)
+ORANGE = (255,165,0)
 
 class Environment:
     """
@@ -30,6 +32,7 @@ class Environment:
             Reset the environment before a new simulation starts
         """
         self._running = True
+        self._paused = False
         self._display_surf = None
         self.graphics_enabled = True
         self.static_time_mode = False
@@ -57,6 +60,7 @@ class Environment:
     def __init__(self):
         self._pygame_initialized = False
         self._running = True
+        self._paused = False
         self._display_surf = None
         self.graphics_enabled = True
         self.static_time_mode = False
@@ -78,11 +82,17 @@ class Environment:
             [(50, 50), (50, 750)],
             [(750, 50), (750, 750)],
 
-            # Inner walls
-            [(300, 300), (500, 300)],
-            [(300, 500), (500, 500)],
-            [(300, 300), (300, 500)],
-            [(500, 300), (500, 500)],
+            # Maze walls
+            [(200, 150), (650, 300)],
+            [(200, 600), (500, 400)],
+            # [(300, 300), (300, 500)],
+            # [(500, 300), (500, 500)],
+
+            # Inner walls big
+            # [(300, 300), (500, 300)],
+            # [(300, 500), (500, 500)],
+            # [(300, 300), (300, 500)],
+            # [(500, 300), (500, 500)],
 
             # Inner small walls 1
             # [(200, 300), (300, 300)],
@@ -106,10 +116,17 @@ class Environment:
             bc.Beacon(50, 750),
             bc.Beacon(750, 750),
 
-            bc.Beacon(300, 300),
-            bc.Beacon(300, 500),
-            bc.Beacon(500, 300),
-            bc.Beacon(500, 500)
+            # Maze walls
+            bc.Beacon(200, 150),
+            bc.Beacon(650, 300),
+            bc.Beacon(200, 600),
+            bc.Beacon(500, 400)
+
+            # Inner walls big
+            # bc.Beacon(300, 300),
+            # bc.Beacon(300, 500),
+            # bc.Beacon(500, 300),
+            # bc.Beacon(500, 500)
         ]
 
         # Dust grid (a grid of integers representing the places cleaned by the robot)
@@ -159,6 +176,12 @@ class Environment:
             self._running = False
             quit()
         if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                ## PAUSE
+                if self._paused:
+                    self._paused = False
+                else:
+                    self._paused = True
             if event.key == pygame.K_LEFT:
                 self.robot.vel_left += self.velocity_base
             if event.key == pygame.K_RIGHT:
@@ -208,14 +231,8 @@ class Environment:
         # Update robot position
         self.robot.move_robot(delta_t, self.beacons, self.walls)
 
-        # get pose based on odometry
-        pose_od = self.robot.get_odometry_based_value()
-        #print("odometry: ", pose_od)
-        #print("actual: ", self.robot.get_robot_position())
-
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)
-        # self.robot.update_beacons(self.beacons, self.walls)
         max_activation = self.robot.max_activation
         norm = closest_activation / max_activation
         self.activations.append(norm)
@@ -291,25 +308,36 @@ class Environment:
         robot_head = tri.line_endpoint(robot_pos, self.robot.angle, self.robot.radius)
         pygame.draw.line(self._display_surf, BLACK, robot_pos, robot_head, 2)
 
-        # Beacon triangulation; X=(x, y, theta)
-        # TODO Temp: (move to Kalman filter)
-        X = self.robot.update_beacons(self.beacons, self.walls)
-        # Draws the triangulation outcome as a smaller white robot:
-        pygame.draw.circle(self._display_surf, WHITE, (int(X[0]), int(X[1])), 15, 0)
-        robot_head = tri.line_endpoint((int(X[0]), int(X[1])), X[2], 15)
-        pygame.draw.line(self._display_surf, BLACK, (int(X[0]), int(X[1])), robot_head, 2)
+        # Draw beacon triangulation output
+        X_beacons = self.robot.get_robot_beacon_position()
+        pygame.draw.circle(self._display_surf, ORANGE, (int(X_beacons[0]), int(X_beacons[1])), 15, 7)
+        robot_head = tri.line_endpoint((int(X_beacons[0]), int(X_beacons[1])), X_beacons[2], 15)
+        pygame.draw.line(self._display_surf, BLACK, (int(X_beacons[0]), int(X_beacons[1])), robot_head, 2)
 
-        # Odometry measurement
-        if self.robot.bel_posx is not None:
-            # TODO Temp: (move to Kalman filter)
-            # Draws the odometry outcome as a smaller red robot:
-            pygame.draw.circle(self._display_surf, RED, (int(self.robot.bel_posx), int(self.robot.bel_posy)), 15, 0)
-            robot_head = tri.line_endpoint((int(self.robot.bel_posx), int(self.robot.bel_posy)), self.robot.bel_angle, 15)
-            pygame.draw.line(self._display_surf, BLACK,  (int(self.robot.bel_posx), int(self.robot.bel_posy)), robot_head, 2)
+        # Draw odometry measurement
+        X_odometry = self.robot.get_robot_od_position()
+        if X_odometry[0] is not None:
+            pygame.draw.circle(self._display_surf, RED, (int(X_odometry[0]), int(X_odometry[1])), 15, 7)
+            robot_head = tri.line_endpoint((int(X_odometry[0]), int(X_odometry[1])), X_odometry[2], 15)
+            pygame.draw.line(self._display_surf, BLACK,  (int(X_odometry[0]), int(X_odometry[1])), robot_head, 2)
+
+        # Draw Kalman output
+        X_believe = self.robot.get_robot_bel_position()
+        pygame.draw.circle(self._display_surf, GREEN, (int(X_believe[0]), int(X_believe[1])), 15, 0)
+        robot_head = tri.line_endpoint((int(X_believe[0]), int(X_believe[1])), X_believe[2], 15)
+        pygame.draw.line(self._display_surf, BLACK,  (int(X_believe[0]), int(X_believe[1])), robot_head, 2)
 
         # Draw debug metrics
         for index, info in enumerate(debug):
             self._display_surf.blit(game_font.render(info, False, BLACK), (830, 50 + (index * 18)))
+
+        # Kalman info
+        types = [(BLUE, 'Actual position', 0), (ORANGE, 'Beacon position', 7), (RED, 'Odometry position', 7), (GREEN, 'Kalman position', 0)]
+        pos = [830, 550]
+        for t in types:
+            pygame.draw.circle(self._display_surf, t[0], pos, int(self.robot.radius/2), t[2])
+            self._display_surf.blit(game_font.render(t[1], False, BLACK), (pos[0]+40, pos[1]-15))
+            pos[1] += int(self.robot.radius)+10
 
         # Update display
         pygame.display.update()
@@ -337,16 +365,17 @@ class Environment:
                  "  Activations: " + str(len(self.activations)),
                  "  Evaluation: " + str(int(self.fitness())),
                  "",
-                 "Genetic algorithm: ",
-                 "   Current generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter),
-                 "      Size: " + str(gen.GenAlg.pop_size_current),
-                 "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
-                 "   Last generation: ",
-                 "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
-                 "      Best cost: " + str(gen.GenAlg.best_cost),
-                 "      Avg cost: " + str(gen.GenAlg.avg_cost),
-                 ""]
+                 "",
+                 # "Genetic algorithm: ",
+                 # "   Current generation: ",
+                 # "      Gen number: " + str(gen.GenAlg.generation_counter),
+                 # "      Size: " + str(gen.GenAlg.pop_size_current),
+                 # "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
+                 # "   Last generation: ",
+                 # "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
+                 # "      Best cost: " + str(gen.GenAlg.best_cost),
+                 # "      Avg cost: " + str(gen.GenAlg.avg_cost),
+                 "HIT SPACE TO PAUSE"]
 
     def get_elapsed_time(self, realtime=False):
         """
@@ -412,8 +441,9 @@ class Environment:
                 if graphics_enabled:
                     for event in pygame.event.get():
                         self.on_event(event)
-                self.on_loop()
-                self.on_render()
+                if not self._paused:
+                    self.on_loop()
+                    self.on_render()
 
                 if timeout > 0:
                     if (self.get_elapsed_time() > (timeout * 1000)):

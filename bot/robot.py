@@ -19,9 +19,9 @@ class Robot:
 
         # Robot positions
         self.radius = 30
-        self.initial_posx = self.posx = self.prev_bel_posx = self.bel_posx = 400.0
-        self.initial_posy = self.posy = self.prev_bel_posy = self.bel_posy = 175.0
-        self.initial_angle = self.angle = self.prev_bel_angle = self.bel_angle = 0
+        self.initial_posx = self.posx = self.prev_bel_posx = self.bel_posx = self.beacon_posx = 400.0
+        self.initial_posy = self.posy = self.prev_bel_posy = self.bel_posy = self.beacon_posy = 175.0
+        self.initial_angle = self.angle = self.prev_bel_angle = self.bel_angle = self.beacon_angle = 0
 
         # odometry based position
         self.od_posx = None
@@ -51,9 +51,9 @@ class Robot:
                                 [0, 0, 0]])
 
     def reset(self):
-        self.posx = self.prev_bel_posx = self.bel_posx = self.initial_posx
-        self.posy = self.prev_bel_posy = self.bel_posy = self.initial_posy
-        self.angle = self.prev_bel_angle = self.bel_angle = self.initial_angle
+        self.posx = self.prev_bel_posx = self.bel_posx = self.beacon_posx = self.initial_posx
+        self.posy = self.prev_bel_posy = self.bel_posy = self.beacon_posy = self.initial_posy
+        self.angle = self.prev_bel_angle = self.bel_angle = self.beacon_angle = self.initial_angle
         
         self.od_posx = None
         self.od_posy = None
@@ -71,9 +71,9 @@ class Robot:
                             [0, 0, 0]])
 
     def set_robot_initial_position(self, x, y, angle):
-        self.posx = self.prev_bel_posx = self.bel_posx = self.initial_posx = x
-        self.posy = self.prev_bel_posy = self.bel_posy = self.initial_posy = y
-        self.angle = self.prev_bel_angle = self.bel_angle = self.initial_angle = angle
+        self.posx = self.prev_bel_posx = self.bel_posx = self.beacon_posx = self.initial_posx = x
+        self.posy = self.prev_bel_posy = self.bel_posy = self.beacon_posy = self.initial_posy = y
+        self.angle = self.prev_bel_angle = self.bel_angle = self.beacon_angle = self.initial_angle = angle
 
     def set_robot_position(self, x, y, angle):
         self.posx = x
@@ -95,11 +95,19 @@ class Robot:
         self.od_posy = y
         self.od_angle = angle
 
+    def set_robot_beacon_position(self, x, y, angle):
+        self.beacon_posx = x
+        self.beacon_posy = y
+        self.beacon_angle = angle
+
     def get_robot_position(self):
         return (self.posx, self.posy, self.angle)
 
     def get_robot_previous_bel_position(self):
         return (self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle)
+
+    def get_robot_beacon_position(self):
+        return (self.beacon_posx, self.beacon_posy, self.beacon_angle)
 
     def get_robot_bel_position(self):
         return (self.bel_posx, self.bel_posy, self.bel_angle)
@@ -135,18 +143,24 @@ class Robot:
         self.set_robot_odometry_position(new_pos_bel[0], new_pos_bel[1], new_pos_bel[2])
         # store previous position before updating current position
         self.set_robot_position(pos[0], pos[1], pos[2])
+        U_odometry = self.get_odometry_based_value()
 
-        mew_t, self.sigma = kal.kalman_filter(self.get_robot_previous_bel_position(), self.sigma, self.get_odometry_based_value(), self.update_beacons(beacons, walls) )
+        # Get position from beacons
+        Z_beacons = self.update_beacons(beacons, walls)
+
+        mew_t, self.sigma = kal.kalman_filter(self.get_robot_previous_bel_position(), self.sigma, U_odometry, Z_beacons)
         # update believed pos
         self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
         self.set_robot_believed_position(mew_t[0], mew_t[1], mew_t[2])
-        
+
+        X_believe = self.get_robot_bel_position()
+        X_odometry = self.get_robot_od_position()
         print("----------------")
-        print("beacons: ", self.update_beacons(beacons, walls))
-        print("od: ", self.get_robot_od_position())
-        print("od_error: ", self.get_odometry_based_value())
-        print("believed: ", self.get_robot_bel_position())
-        print("actual: ",self.get_robot_position())
+        print("beacons: ", Z_beacons)
+        print("od: ", X_odometry)
+        print("od_error: ", U_odometry)
+        print("believed: ", X_believe)
+        print("actual: ", pos)
         print("----------------")
         
 
@@ -156,7 +170,6 @@ class Robot:
         sample_pos = self.odometry.sample_motion_model(ut, x)
         return (sample_pos[0] - self.prev_bel_posx, sample_pos[1] - self.prev_bel_posy, sample_pos[2] - self.prev_bel_angle)
         
-
 
     def update_beacons(self, beacons, walls):
         """
@@ -194,6 +207,7 @@ class Robot:
         self.connected_beacons = connected_beacons
 
         X = tri.triangulate_beacons(connected_beacons)
+        self.set_robot_beacon_position(X[0], X[1], X[2])
         return X
 
     def update_sensors(self, walls):
