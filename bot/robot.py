@@ -123,43 +123,51 @@ class Robot:
         """
             move the robot using the given delta time
             vel_right and vel_left are switched on purpose to compensate for the pygame coordinate system (y-axis is flipped, with 0,0 point being top left)
+            After the move has been processed, we also update the kalman filter
         """
 
         if delta_time >= self.radius*10:
             # Delta_t exceeds robot radius; wall detection becomes unreliable at this point
             raise ValueError('movement delta_time of ' + str(delta_time) + 'ms exceeds robot radius. This might be caused by a high time_dilation or a screen drag. (Do not drag the screen!)')
         
-        # update actual position
+        # Update actual position
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
         pos = kin.bot_calc_coordinate(self.posx, self.posy, self.angle, left_velocity, right_velocity,
                                       delta_time / 10, self.radius * 2)
 
-
+        # Update believe position using the same velocities
         new_pos_bel = kin.bot_calc_coordinate(self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity,
                                       delta_time / 10, self.radius * 2)
 
-        # set odometry pos
+        # Set odometry position
         self.set_robot_odometry_position(new_pos_bel[0], new_pos_bel[1], new_pos_bel[2])
-        # store previous position before updating current position
+
+        # Store previous position before updating current position
         self.set_robot_position(pos[0], pos[1], pos[2])
         U_odometry = self.get_odometry_based_value()
 
         # Get position from beacons
         Z_beacons = self.update_beacons(beacons, walls)
 
-        mew_t, self.sigma = kal.kalman_filter(self.get_robot_previous_bel_position(), self.sigma, U_odometry, Z_beacons)
-        # update believed pos
-        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
-        self.set_robot_believed_position(mew_t[0], mew_t[1], mew_t[2])
+        # Mu at t-1
+        mu_t_minus_1 = self.get_robot_previous_bel_position()
 
-        X_believe = self.get_robot_bel_position()
-        X_odometry = self.get_robot_od_position()
+        # All theta values are preprocessed in order to prevent unexpected behavior when theta values are close to the 0 degree bearing
+
+        # Execute Kalman filter using odometry and beacon position
+        mu_t, self.sigma = kal.kalman_filter(mu_t_minus_1, self.sigma, U_odometry, Z_beacons)
+
+        # Update believed pos
+        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
+        self.set_robot_believed_position(mu_t[0], mu_t[1], mu_t[2])
+
+        # Print filter outputs
         print("----------------")
         print("beacons: ", Z_beacons)
-        print("od: ", X_odometry)
+        print("od: ", self.get_robot_od_position())
         print("od_error: ", U_odometry)
-        print("believed: ", X_believe)
+        print("believed: ", self.get_robot_bel_position())
         print("actual: ", pos)
         print("----------------")
         
@@ -168,7 +176,7 @@ class Robot:
         ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle), (self.od_posx, self.od_posy, self.od_angle)]
         x = (self.od_posx, self.od_posy, self.od_angle)
         sample_pos = self.odometry.sample_motion_model(ut, x)
-        return (sample_pos[0] - self.prev_bel_posx, sample_pos[1] - self.prev_bel_posy, sample_pos[2] - self.prev_bel_angle)
+        return (sample_pos[0] - self.prev_bel_posx, sample_pos[1] - self.prev_bel_posy, (sample_pos[2] - self.prev_bel_angle) % 360)
         
 
     def update_beacons(self, beacons, walls):

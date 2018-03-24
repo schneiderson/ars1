@@ -1,7 +1,5 @@
 ''' TRIGONOMETRY MODULE '''
 import math
-import pygame
-from itertools import groupby
 
 __author__ = 'Camiel Kerkhofs'
 
@@ -106,7 +104,7 @@ def triangulate_beacons(beacons):
 
     # Get the robots real angle using the known beacons and the calculated robot position
     theta_real = line_angle((beacons[0].x, beacons[0].y), (center[0], center[1]))  # angle between beacon 1 and robot
-    theta = theta_real - beacons[0].bearing  # Actual robot pose given its relative angle to beacon 1
+    theta = (theta_real - beacons[0].bearing) % 360  # Actual robot pose given its relative angle to beacon 1
 
     return (center[0], center[1], theta)
 
