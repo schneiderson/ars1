@@ -23,6 +23,8 @@ RED = (226, 123, 120)
 GREEN = (34,139,34)
 ORANGE = (255,165,0)
 
+DRAW_KALMAN_HISTORY = True
+
 class Environment:
     """
         The environment controls a single simulation at once (graphics are optional)
@@ -333,9 +335,10 @@ class Environment:
         # for each item in self.q, draw to pygame
         for i in range(0, self.qsize):
             belief = self.q.get()
-            pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 0)
-            robot_head = tri.line_endpoint((int(belief[0]), int(belief[1])), belief[2], 15)
-            pygame.draw.line(self._display_surf, BLACK, (int(belief[0]), int(belief[1])), robot_head, 2)
+            if i == self.qsize-1 or DRAW_KALMAN_HISTORY:
+                pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 0)
+                robot_head = tri.line_endpoint((int(belief[0]), int(belief[1])), belief[2], 15)
+                pygame.draw.line(self._display_surf, BLACK, (int(belief[0]), int(belief[1])), robot_head, 2)
             self.q.put(belief)
 
         # Draw debug metrics
