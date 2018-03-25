@@ -6,10 +6,10 @@ import numpy
 __author__ = 'Steffen Schneider'
 
 
-class odometry:
+class Odometry:
     def __init__(self, noise_parameters=None):
         # self.np: alpha 1-4 (error/noise parameters)
-        self.np = [.00001, .00001, .00001, .00001]
+        self.np = [.01, .01, .01, .01]
         if noise_parameters:
             self.np = noise_parameters
 
@@ -48,7 +48,6 @@ class odometry:
         p_3 = self.prob_func(d_rot2 - d_hat_rot2, sd_p3)
 
         return p_1 * p_2 * p_3
-
 
     def sample_motion_model(self, ut, pos):
 

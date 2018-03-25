@@ -18,7 +18,7 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
 
     C_t_transpose = np.transpose(C_t)
 
-    # Q_t is the error in the correction, R_t is the error in the prediction
+    # Q_t is the error in the correction (due sensors), R_t is the error in the prediction (due odometry)
     Q_t = R_t = np.array([[.05, 0, 0],
                           [0, .05, 0],
                           [0, 0, .05]])
@@ -27,7 +27,7 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     # Set our predicted position according to our old position, velocity, and estimated change due to control
     mu_bar_t = np.matmul(A_t, mu_t_minus_1) + np.matmul(B_t, u_t)
     mu_bar_t[2] = mu_bar_t[2] % 360
-    # Set our new covariance matrix based on our estimated error in u_t
+    # Increase our covariance based on our estimated error in u_t
     sigma_bar_t = np.matmul(np.matmul(A_t, sigma_t_minus_1), np.transpose(A_t)) + R_t
 
     # CORRECTION
@@ -37,7 +37,7 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     # Correct our predicted position due to our sensor observation
     mu_t = mu_bar_t + np.matmul(K_t, z_t - np.matmul(C_t, mu_bar_t))
     mu_t[2] = mu_t[2] % 360
-    # Correct our covariance matrix due to the difference between our prediction and correction due to sensor data
+    # Correct our covariance matrix (decrease covariance) due to the sensor data
     sigma_t = np.matmul(np.identity(3) - np.matmul(K_t, C_t), sigma_bar_t)
 
     print(sigma_t)

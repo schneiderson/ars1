@@ -16,7 +16,7 @@ BEACON_COLLISION_TOLERANCE = 5
 class Robot:
     def __init__(self):
         # Odometry
-        self.odometry = od.odometry()
+        self.odometry = od.Odometry()
 
         # Robot positions
         self.radius = 30
@@ -135,30 +135,27 @@ class Robot:
         # Update actual position
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
-        pos = kin.bot_calc_coordinate(self.posx, self.posy, self.angle, left_velocity, right_velocity,
-                                      delta_time / 10, self.radius * 2)
+        self.posx, self.posy, self.angle = kin.bot_calc_coordinate(
+            self.posx, self.posy, self.angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
+
+        # Store previous believed position before updating current position
+        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
 
         # Update believed position using the same velocities
-        new_pos_bel = kin.bot_calc_coordinate(self.bel_posx, self.bel_posy, self.bel_angle, left_velocity,
-                                              right_velocity,
-                                              delta_time / 10, self.radius * 2)
+        self.bel_posx, self.bel_posy, self.bel_angle = kin.bot_calc_coordinate(
+            self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
 
-        # Set odometry position
-        self.set_robot_odometry_position(new_pos_bel[0], new_pos_bel[1], new_pos_bel[2])
-
-        # Store previous position before updating current position
-        self.set_robot_position(pos[0], pos[1], pos[2])
-
-        # Get change in position in this frame from odometry
+        # Get believed change in position in this frame from the odometry model
         U_odometry = self.get_odometry_based_value()
 
-        # Get estimated position from beacon data
+        # Get estimated new position from beacon data
         Z_beacons = self.update_beacons(beacons, walls)
 
         # Mu at t-1
         mu_t_minus_1 = self.get_robot_previous_bel_position()
 
-        # All theta values are preprocessed in order to prevent unexpected behavior when theta values are close to the 0 degree bearing
+        # All theta values are preprocessed in order to prevent unexpected
+        # behavior when theta values are close to the 0 degree bearing
 
         # Execute Kalman filter using odometry and beacon position
         mu_t, self.sigma = kal.kalman_filter(mu_t_minus_1, self.sigma, U_odometry, Z_beacons)
@@ -169,17 +166,17 @@ class Robot:
 
         # Print filter outputs
         print("----------------")
-        print("beacons: ", Z_beacons)
-        print("od: ", self.get_robot_od_position())
-        print("od_error: ", U_odometry)
-        print("believed: ", self.get_robot_bel_position())
-        print("actual: ", pos)
+        print("beacons est. pos.: ", Z_beacons)
+        print("od est. pos: ", self.get_robot_od_position())
+        print("od believed delta pose: ", U_odometry)
+        print("KF believed pose: ", self.get_robot_bel_position())
+        print("actual: ", self.get_robot_position())
         print("----------------")
 
     def get_odometry_based_value(self):
         ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle),
-              (self.od_posx, self.od_posy, self.od_angle)]
-        x = (self.od_posx, self.od_posy, self.od_angle)
+              (self.bel_posx, self.bel_posy, self.bel_angle)]
+        x = (self.bel_posx, self.bel_posy, self.bel_angle)
         sample_pos = self.odometry.sample_motion_model(ut, x)
 
         change_in_x = sample_pos[0] - self.prev_bel_posx
@@ -188,7 +185,7 @@ class Robot:
         change_in_theta = (change_in_theta + 180) % 360 - 180
 
         # TODO: The change_in_theta is too big as a result of the odometry sample. So to speak: the banana we are sampling from is too long (sometimes exceeds 200 degrees)
-        change_in_theta /= 5
+        # change_in_theta /= 5
 
         return (change_in_x, change_in_y, change_in_theta)
 

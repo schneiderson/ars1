@@ -88,7 +88,7 @@ class TestOdometry(unittest.TestCase):
          
 
     def test_probabilities(self):
-        odometry = od.odometry()
+        odometry = od.Odometry()
         # set noise parameters
         odometry.set_noise_params( [.1, .1, .1, .1] )
 
@@ -107,7 +107,7 @@ class TestOdometry(unittest.TestCase):
 
 
     def test_sampling(self):
-        odometry = od.odometry()
+        odometry = od.Odometry()
         # set noise parameters
         odometry.set_noise_params( [.1, .1, .1, .1] )
 

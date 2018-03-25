@@ -15,7 +15,7 @@ if args.noise:
     noise = [ float(e) for e in args.noise.split(",") ]
 print("noise parameters: ", noise )
 
-odometry = od.odometry()
+odometry = od.Odometry()
 
 u_t1 = [(0, 0, 0), (2, 0, 0)]
 u_t2 = [(2, 0, 0), (4, 0, 0)]
