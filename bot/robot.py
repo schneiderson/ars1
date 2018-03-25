@@ -46,7 +46,7 @@ class Robot:
         self.connected_beacons = []
         self.num_collisions = 0
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
-        self.beacon_dist_noise = 0.1
+        self.beacon_dist_noise = 0.01
         self.sigma = np.array([[0, 0, 0],
                                [0, 0, 0],
                                [0, 0, 0]])
@@ -138,7 +138,7 @@ class Robot:
         pos = kin.bot_calc_coordinate(self.posx, self.posy, self.angle, left_velocity, right_velocity,
                                       delta_time / 10, self.radius * 2)
 
-        # Update believe position using the same velocities
+        # Update believed position using the same velocities
         new_pos_bel = kin.bot_calc_coordinate(self.bel_posx, self.bel_posy, self.bel_angle, left_velocity,
                                               right_velocity,
                                               delta_time / 10, self.radius * 2)
@@ -148,9 +148,11 @@ class Robot:
 
         # Store previous position before updating current position
         self.set_robot_position(pos[0], pos[1], pos[2])
+
+        # Get change in position in this frame from odometry
         U_odometry = self.get_odometry_based_value()
 
-        # Get position from beacons
+        # Get estimated position from beacon data
         Z_beacons = self.update_beacons(beacons, walls)
 
         # Mu at t-1
