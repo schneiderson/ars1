@@ -72,7 +72,6 @@ if __name__ == "__main__":
             print('\nRunning a new simulation.. (Might open a new window in the background)')
             simulation = True
 
-
     recurrence = True
 
     if not simulation:

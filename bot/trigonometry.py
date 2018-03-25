@@ -3,6 +3,7 @@ import math
 
 __author__ = 'Camiel Kerkhofs'
 
+
 def triangulate_beacons(beacons):
     """
         Given a set of beacons and the distance to each beacon, finds the point where they all intersect.
@@ -108,6 +109,7 @@ def triangulate_beacons(beacons):
 
     return (center[0], center[1], theta)
 
+
 def line_intersect(a_p1, a_p2, b_p1, b_p2, tolerance = 0.001):
     """
         Finds the intersection between two lines a and b defined by their respective endpoints p1 and p2
@@ -145,6 +147,7 @@ def line_intersect(a_p1, a_p2, b_p1, b_p2, tolerance = 0.001):
 
     return x, y
 
+
 def line_endpoint(start, angle, distance):
     """
         Return the endpoint of a line that goes from point 'start' at angle 'angle' for distance 'distance'
@@ -153,11 +156,13 @@ def line_endpoint(start, angle, distance):
     y = start[1] + distance * math.sin(math.radians(angle))
     return  x, y
 
+
 def law_of_sines(a, b, c):
     """
         Return the angle of the corner opposite to side c in a triangle given by its 3 sides a, b and c (Law of sines)
     """
     return math.degrees(math.acos((c**2 - b**2 - a**2)/(-2.0 * a * b)))
+
 
 def law_of_cosines(a, b, angle):
     """
@@ -169,11 +174,13 @@ def law_of_cosines(a, b, angle):
                     2*a*b*math.cos(math.radians(angle))
                 )
 
+
 def line_distance(p1, p2):
     """
         Return the distance between 2 points p1 and p2
     """
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
 
 def line_angle(p1, p2):
     """
@@ -183,6 +190,7 @@ def line_angle(p1, p2):
     """
     angle = math.atan2((p1[1]-p2[1]), (p1[0]-p2[0])) * 180.0/math.pi
     return (angle + 360) % 360
+
 
 def get_polygon_center(points):
     """

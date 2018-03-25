@@ -9,6 +9,7 @@ from bot import ann as ann
 from bot import beacon as bc
 from bot import trigonometry as tri
 import time
+import queue
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
@@ -68,6 +69,8 @@ class Environment:
 
         self.robot = bot.Robot()
         self.neural_net = None
+        self.qsize = 10
+        self.q = queue.Queue(maxsize=self.qsize)  # Queue of last 10 KF predictions that should be drawn in pygame
 
         self.velocity_base = 0.1
         self.velocity_min = -1
@@ -321,11 +324,19 @@ class Environment:
             robot_head = tri.line_endpoint((int(X_odometry[0]), int(X_odometry[1])), X_odometry[2], 15)
             pygame.draw.line(self._display_surf, BLACK,  (int(X_odometry[0]), int(X_odometry[1])), robot_head, 2)
 
-        # Draw Kalman output
+        # Draw Kalman output(s)
         X_believe = self.robot.get_robot_bel_position()
-        pygame.draw.circle(self._display_surf, GREEN, (int(X_believe[0]), int(X_believe[1])), 15, 0)
-        robot_head = tri.line_endpoint((int(X_believe[0]), int(X_believe[1])), X_believe[2], 15)
-        pygame.draw.line(self._display_surf, BLACK,  (int(X_believe[0]), int(X_believe[1])), robot_head, 2)
+        # remove last item from queue if its longer than max, put new prediction in a queue
+        if self.q.full():
+            self.q.get()
+        self.q.put(X_believe)
+        # for each item in self.q, draw to pygame
+        for i in range(0, self.qsize):
+            belief = self.q.get()
+            pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 0)
+            robot_head = tri.line_endpoint((int(belief[0]), int(belief[1])), belief[2], 15)
+            pygame.draw.line(self._display_surf, BLACK, (int(belief[0]), int(belief[1])), robot_head, 2)
+            self.q.put(belief)
 
         # Draw debug metrics
         for index, info in enumerate(debug):

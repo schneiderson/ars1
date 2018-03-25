@@ -11,7 +11,7 @@ __author__ = "Olve Drageset, Andre Gramlich"
 def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     # A_t is the Identity matrix because we have 0 inertia
     # B_t is the Identity matrix because our input u_t is already the delta in position due to control
-    # C_t is th Identity matrix because we want to make it simple
+    # C_t is the Identity matrix because we want to make it simple
     A_t = B_t = C_t = np.array([[1, 0, 0],
                                 [0, 1, 0],
                                 [0, 0, 1]])
