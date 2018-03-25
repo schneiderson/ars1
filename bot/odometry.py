@@ -38,13 +38,13 @@ class Odometry:
         d_hat_rot2 = math.radians(p2[2]) - math.radians(p1[2]) - d_hat_rot1
 
         # compute probabilities
-        sd_p1 = self.np[0] * math.fabs(d_hat_rot1) + self.np[1] * d_hat_trans                           # standard deviation
+        sd_p1 = self.np[0] * math.fabs(d_hat_rot1) + self.np[1] * d_hat_trans                            # standard deviation
         p_1 = self.prob_func(d_rot1 - d_hat_rot1, sd_p1)
 
-        sd_p2 = self.np[2] * d_hat_trans + self.np[3] * (math.fabs(d_hat_rot1) + math.fabs(d_hat_rot2)) # standard deviation
+        sd_p2 = self.np[2] * d_hat_trans + self.np[3] * (math.fabs(d_hat_rot1) + math.fabs(d_hat_rot2))  # standard deviation
         p_2 = self.prob_func(d_trans - d_hat_trans, sd_p2)
 
-        sd_p3 = self.np[0] * math.fabs(d_hat_rot2) + self.np[1] * d_hat_trans                           # standard deviation
+        sd_p3 = self.np[0] * math.fabs(d_hat_rot2) + self.np[1] * d_hat_trans                            # standard deviation
         p_3 = self.prob_func(d_rot2 - d_hat_rot2, sd_p3)
 
         return p_1 * p_2 * p_3
@@ -57,13 +57,13 @@ class Odometry:
         d_rot2 = math.radians(ut[1][2]) - math.radians(ut[0][2]) - d_rot1
 
         # Sample
-        sd_p1 = self.np[0] * math.fabs(d_rot1) + self.np[1] * d_trans                       # standard deviation
+        sd_p1 = self.np[0] * math.fabs(d_rot1) + self.np[1] * d_trans                        # standard deviation
         d_hat_rot1 = d_rot1 + self.sample_func(sd_p1)
 
-        sd_p2 = self.np[2] * d_trans + self.np[3] * (math.fabs(d_rot1) + math.fabs(d_rot2)) # standard deviation
+        sd_p2 = self.np[2] * d_trans + self.np[3] * (math.fabs(d_rot1) + math.fabs(d_rot2))  # standard deviation
         d_hat_trans = d_trans + self.sample_func(sd_p2)
 
-        sd_p3 = self.np[0] * math.fabs(d_rot2) + self.np[1] * d_trans                       # standard deviation
+        sd_p3 = self.np[0] * math.fabs(d_rot2) + self.np[1] * d_trans                        # standard deviation
         d_hat_rot2 = d_rot2 + self.sample_func(sd_p3)
 
         # calculate new position
@@ -72,7 +72,7 @@ class Odometry:
         angle_prime = math.radians(pos[2]) + d_hat_rot1 + d_hat_rot2
         angle = math.degrees(angle_prime) % 360
 
-        return (x_prime, y_prime, angle)
+        return x_prime, y_prime, angle
 
 
 ''' Helper function '''

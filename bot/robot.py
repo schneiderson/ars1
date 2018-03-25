@@ -46,7 +46,7 @@ class Robot:
         self.connected_beacons = []
         self.num_collisions = 0
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
-        self.beacon_dist_noise = 0.01
+        self.beacon_dist_noise = 0.05
         self.sigma = np.array([[0, 0, 0],
                                [0, 0, 0],
                                [0, 0, 0]])
@@ -102,19 +102,19 @@ class Robot:
         self.beacon_angle = angle
 
     def get_robot_position(self):
-        return (self.posx, self.posy, self.angle)
+        return self.posx, self.posy, self.angle
 
     def get_robot_previous_bel_position(self):
-        return (self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle)
+        return self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle
 
     def get_robot_beacon_position(self):
-        return (self.beacon_posx, self.beacon_posy, self.beacon_angle)
+        return self.beacon_posx, self.beacon_posy, self.beacon_angle
 
     def get_robot_bel_position(self):
-        return (self.bel_posx, self.bel_posy, self.bel_angle)
+        return self.bel_posx, self.bel_posy, self.bel_angle
 
     def get_robot_od_position(self):
-        return (self.od_posx, self.od_posy, self.od_angle)
+        return self.od_posx, self.od_posy, self.od_angle
 
     def set_velocity(self, left, right):
         self.vel_left = left
@@ -132,62 +132,62 @@ class Robot:
             raise ValueError('movement delta_time of ' + str(
                 delta_time) + 'ms exceeds robot radius. This might be caused by a high time_dilation or a screen drag. (Do not drag the screen!)')
 
-        # Update actual position
+        # Update actual position -----------------
+
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
-        # self.posx, self.posy, self.angle = kin.bot_calc_coordinate(
-        #     self.posx, self.posy, self.angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
 
-        newpos = kin.bot_calc_coordinate(
+        # calculate new pose based on current pose, and right and left wheel velocities
+        new_pose = kin.bot_calc_coordinate(
             self.posx, self.posy, self.angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
 
-        deltapos = (newpos[0] - self.posx, newpos[1] - self.posy, newpos[2] - self.angle)
+        # get the change is pose
+        delta_pose = (new_pose[0] - self.posx, new_pose[1] - self.posy, new_pose[2] - self.angle)
 
-        self.posx, self.posy, self.angle = newpos
+        # Update our current pose to be the new pose
+        self.posx, self.posy, self.angle = new_pose
 
-        # Store previous believed position before updating current position
-        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
+        # Update believed position ----------------
 
-        # Update believed position using the same velocities
-        self.bel_posx, self.bel_posy, self.bel_angle = kin.bot_calc_coordinate(
+        # Store previous believed pose (from KF) before updating the current
+        self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle = (self.bel_posx, self.bel_posy, self.bel_angle)
+
+        # Odometry stuff:
+        self.od_posx, self.od_posy, self.od_angle = kin.bot_calc_coordinate(
             self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
-
-        # Get believed change in position in this frame from the odometry model
-        delta_x, delta_y, delta_theta, pos = self.get_odometry_based_value()
-        U_odometry = delta_x, delta_y, delta_theta
-
-        self.set_robot_odometry_position(pos[0], pos[1], pos[2])
+        delta_x, delta_y, delta_theta, pos = self.get_odometry_based_value()  # Get predicted change in pose from the odometry model
+        U_t = delta_x, delta_y, delta_theta  # U_t is used as parameter in the KF
+        self.od_posx, self.od_posy, self.od_angle = pos
 
         # Get estimated new position from beacon data
-        Z_beacons = self.update_beacons(beacons, walls)
+        Z_t = self.update_beacons(beacons, walls)
 
         # Mu at t-1
-        mu_t_minus_1 = self.get_robot_previous_bel_position()
+        mu_t_minus_1 = (self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle)
 
         # All theta values are preprocessed in order to prevent unexpected
         # behavior when theta values are close to the 0 degree bearing
 
         # Execute Kalman filter using odometry and beacon position
-        mu_t, self.sigma = kal.kalman_filter(mu_t_minus_1, self.sigma, U_odometry, Z_beacons)
+        mu_t, self.sigma = kal.kalman_filter(mu_t_minus_1, self.sigma, U_t, Z_t)
 
         # Update believed pos
-        self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
         self.set_robot_believed_position(mu_t[0], mu_t[1], mu_t[2])
 
         # Print filter outputs
         print("----------------")
-        print("beacons est. pos.: ", Z_beacons)
+        print("beacons est. pos.: ", Z_t)
         print("od estimated pos.: ", self.get_robot_od_position())
         print("KF believed pose: ", self.get_robot_bel_position())
         print("*real world pose: ", self.get_robot_position())
-        print("od believed delta pose: ", U_odometry)
-        print("*real world delta pose: ", deltapos)
+        print("od believed delta pose: ", U_t)
+        print("*real world delta pose: ", delta_pose)
         print("----------------")
 
     def get_odometry_based_value(self):
         ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle),
-              (self.bel_posx, self.bel_posy, self.bel_angle)]
-        x = (self.bel_posx, self.bel_posy, self.bel_angle)
+              (self.od_posx, self.od_posy, self.od_angle)]
+        x = (self.od_posx, self.od_posy, self.od_angle)
         sample_pos = self.odometry.sample_motion_model(ut, x)
 
         change_in_x = sample_pos[0] - self.prev_bel_posx
