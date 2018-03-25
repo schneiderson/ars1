@@ -187,6 +187,9 @@ class Robot:
         change_in_theta = sample_pos[2] - self.prev_bel_angle
         change_in_theta = (change_in_theta + 180) % 360 - 180
 
+        # TODO: The change_in_theta is too big as a result of the odometry sample. So to speak: the banana we are sampling from is too long (sometimes exceeds 200 degrees)
+        change_in_theta /= 5
+
         return (change_in_x, change_in_y, change_in_theta)
 
     def update_beacons(self, beacons, walls):
