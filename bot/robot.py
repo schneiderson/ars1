@@ -135,8 +135,15 @@ class Robot:
         # Update actual position
         left_velocity = float(format(self.vel_right, '.5f'))
         right_velocity = float(format(self.vel_left, '.5f'))
-        self.posx, self.posy, self.angle = kin.bot_calc_coordinate(
+        # self.posx, self.posy, self.angle = kin.bot_calc_coordinate(
+        #     self.posx, self.posy, self.angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
+
+        newpos = kin.bot_calc_coordinate(
             self.posx, self.posy, self.angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
+
+        deltapos = (newpos[0] - self.posx, newpos[1] - self.posy, newpos[2] - self.angle)
+
+        self.posx, self.posy, self.angle = newpos
 
         # Store previous believed position before updating current position
         self.set_robot_previous_believed_position(self.bel_posx, self.bel_posy, self.bel_angle)
@@ -146,7 +153,10 @@ class Robot:
             self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
 
         # Get believed change in position in this frame from the odometry model
-        U_odometry = self.get_odometry_based_value()
+        delta_x, delta_y, delta_theta, pos = self.get_odometry_based_value()
+        U_odometry = delta_x, delta_y, delta_theta
+
+        self.set_robot_odometry_position(pos[0], pos[1], pos[2])
 
         # Get estimated new position from beacon data
         Z_beacons = self.update_beacons(beacons, walls)
@@ -167,10 +177,11 @@ class Robot:
         # Print filter outputs
         print("----------------")
         print("beacons est. pos.: ", Z_beacons)
-        print("od est. pos: ", self.get_robot_od_position())
-        print("od believed delta pose: ", U_odometry)
+        print("od estimated pos.: ", self.get_robot_od_position())
         print("KF believed pose: ", self.get_robot_bel_position())
-        print("actual: ", self.get_robot_position())
+        print("*real world pose: ", self.get_robot_position())
+        print("od believed delta pose: ", U_odometry)
+        print("*real world delta pose: ", deltapos)
         print("----------------")
 
     def get_odometry_based_value(self):
@@ -187,7 +198,7 @@ class Robot:
         # TODO: The change_in_theta is too big as a result of the odometry sample. So to speak: the banana we are sampling from is too long (sometimes exceeds 200 degrees)
         # change_in_theta /= 5
 
-        return (change_in_x, change_in_y, change_in_theta)
+        return change_in_x, change_in_y, change_in_theta, sample_pos
 
     def update_beacons(self, beacons, walls):
         """
