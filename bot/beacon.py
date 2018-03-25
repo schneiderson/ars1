@@ -2,6 +2,7 @@
 
 __author__ = 'Camiel Kerkhofs'
 
+
 class Beacon(object):
 
     def __init__(self, x, y, dist=None, bearing=None):

@@ -19,9 +19,9 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     C_t_transpose = np.transpose(C_t)
 
     # Q_t is the error in the correction, R_t is the error in the prediction
-    Q_t = R_t = np.array([[.04, 0, 0],
-                          [0, .04, 0],
-                          [0, 0, .04]])
+    Q_t = R_t = np.array([[.05, 0, 0],
+                          [0, .05, 0],
+                          [0, 0, .05]])
 
     # PREDICTION
     # Set our predicted position according to our old position, velocity, and estimated change due to control
@@ -39,6 +39,8 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     mu_t[2] = mu_t[2] % 360
     # Correct our covariance matrix due to the difference between our prediction and correction due to sensor data
     sigma_t = np.matmul(np.identity(3) - np.matmul(K_t, C_t), sigma_bar_t)
+
+    print(sigma_t)
 
     return mu_t, sigma_t  # Prediction of pose at time t, covariance at time t
 
