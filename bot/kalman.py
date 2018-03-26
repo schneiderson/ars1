@@ -9,7 +9,8 @@ __author__ = "Olve Drageset, Andre Gramlich"
 
 
 def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
-    # A_t is the Identity matrix because we have 0 inertia
+
+    # A_t is the Identity matrix because we have 0 change in position depending on our previous position
     # B_t is the Identity matrix because our input u_t is already the delta in position due to control
     # C_t is the Identity matrix because we want to make it simple
     A_t = B_t = C_t = np.array([[1, 0, 0],
@@ -18,10 +19,13 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
 
     C_t_transpose = np.transpose(C_t)
 
-    # Q_t is the error in the correction (due sensors), R_t is the error in the prediction (due odometry)
-    Q_t = R_t = np.array([[.05, 0, 0],
-                          [0, .05, 0],
-                          [0, 0, .05]])
+    # Q_t is the covariance for the sensor error, R_t is for the odometry error
+    Q_t = np.array([[.01, 0, 0],
+                    [0, .01, 0],
+                    [0, 0, .01]])
+    R_t = np.array([[.05, 0, 0],
+                    [0, .05, 0],
+                    [0, 0, .05]])
 
     # PREDICTION
     # Set our predicted position according to our old position, velocity, and estimated change due to control
