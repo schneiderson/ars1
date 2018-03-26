@@ -7,7 +7,7 @@ from bot import kalman as kal
 import numpy as np
 import random
 
-__author__ = 'Camiel Kerkhofs'
+__author__ = 'Camiel Kerkhofs, Steffen Schneider, Olve Drageset'
 
 COLLISION_TOLERANCE = 0.001
 BEACON_COLLISION_TOLERANCE = 5
@@ -46,7 +46,7 @@ class Robot:
         self.connected_beacons = []
         self.num_collisions = 0
         self.max_activation = self.sensor_max ** self.dist_transformation_factor
-        self.beacon_dist_noise = 0.05
+        self.beacon_dist_noise = 0.1
         self.sigma = np.array([[0, 0, 0],
                                [0, 0, 0],
                                [0, 0, 0]])
@@ -194,9 +194,6 @@ class Robot:
         change_in_y = sample_pos[1] - self.prev_bel_posy
         change_in_theta = sample_pos[2] - self.prev_bel_angle
         change_in_theta = (change_in_theta + 180) % 360 - 180
-
-        # TODO: The change_in_theta is too big as a result of the odometry sample. So to speak: the banana we are sampling from is too long (sometimes exceeds 200 degrees)
-        # change_in_theta /= 5
 
         return change_in_x, change_in_y, change_in_theta, sample_pos
 

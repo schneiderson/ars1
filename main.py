@@ -79,7 +79,7 @@ if __name__ == "__main__":
             Load weights from a previous simulation:
         """
         weights = load_weights_from_file('weights/saved/dt200_180sec_cost3/gen5_cost-21245_avg-5821')
-        print("Simulation fitness result: " + str(environment.simulate(True, 5, 0, weights=weights, static_delta_t=200, recurrence=recurrence, fitness_id=3, start_x=400, start_y=225, start_angle=40)))
+        print("Simulation fitness result: " + str(environment.simulate(True, 4, 0, weights=weights, static_delta_t=200, recurrence=recurrence, fitness_id=3, start_x=400, start_y=225, start_angle=40)))
 
     else:
         """
