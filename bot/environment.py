@@ -20,8 +20,8 @@ GRAY = (244, 245, 247)
 WHITE = (255, 255, 255)
 BLUE = (66, 134, 244)
 RED = (226, 123, 120)
-GREEN = (34,139,34)
-ORANGE = (255,165,0)
+GREEN = (34, 139, 34)
+ORANGE = (255, 165, 0)
 
 DRAW_KALMAN_HISTORY = True
 
@@ -336,7 +336,7 @@ class Environment:
         for i in range(0, self.qsize):
             belief = self.q.get()
             if i == self.qsize-1 or DRAW_KALMAN_HISTORY:
-                pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 0)
+                pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 7)
                 robot_head = tri.line_endpoint((int(belief[0]), int(belief[1])), belief[2], 15)
                 pygame.draw.line(self._display_surf, BLACK, (int(belief[0]), int(belief[1])), robot_head, 2)
             self.q.put(belief)
