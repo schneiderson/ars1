@@ -47,6 +47,9 @@ class Environment:
         self.activations = []
         self.rotation_speeds = []
         self.fitness_id = 1
+        self.delta_kalman = []
+        self.delta_odometry = []
+        self.delta_beacon = []
 
         # Reset the dust grid
         self.cleaned = 0
@@ -77,6 +80,10 @@ class Environment:
         self.velocity_base = 0.1
         self.velocity_min = -1
         self.velocity_max = 1
+        
+        self.delta_kalman = []
+        self.delta_odometry = []
+        self.delta_beacon = []
 
         # Walls
         # A wall is defined as 2 points: [(x1,y1), (x2,y2)] which gives a line from x1,y1 to x2,y2
@@ -235,6 +242,27 @@ class Environment:
 
         # Update robot position
         self.robot.move_robot(delta_t, self.beacons, self.walls)
+
+        # get deviations for plotting
+        if( len(self.delta_kalman) < 1000): 
+            self.delta_kalman.append(self.robot.get_kf_deviation())
+            avg_xy = ( np.sum([x[0] for x in self.delta_kalman]) / len(self.delta_kalman) + np.sum([x[1] for x in self.delta_kalman]) / len(self.delta_kalman) ) / 2
+            avg_angle = np.sum([x[2] for x in self.delta_kalman]) / len(self.delta_kalman)
+            print("----------------")
+            print("kalman avg_xy deviation: ", avg_xy)
+            print("kalman avg_angle deviation: ", avg_angle)
+        if( len(self.delta_odometry) < 1000): 
+            self.delta_odometry.append(self.robot.get_odometry_deviation())
+            avg_xy = ( np.sum([x[0] for x in self.delta_odometry]) / len(self.delta_odometry) + np.sum([x[1] for x in self.delta_odometry]) / len(self.delta_odometry) ) / 2
+            avg_angle = np.sum([x[2] for x in self.delta_odometry]) / len(self.delta_odometry)
+            print("odometry avg_xy deviation: ", avg_xy)
+            print("odometry avg_angle deviation: ", avg_angle)
+        if( len(self.delta_beacon) < 1000): 
+            self.delta_beacon.append(self.robot.get_beacon_deviation())
+            avg_xy = ( np.sum([x[0] for x in self.delta_beacon]) / len(self.delta_beacon) + np.sum([x[1] for x in self.delta_beacon]) / len(self.delta_beacon) ) / 2
+            avg_angle = np.sum([x[2] for x in self.delta_beacon]) / len(self.delta_beacon)
+            print("beacon avg_xy deviation: ", avg_xy)
+            print("beacon avg_angle deviation: ", avg_angle)
 
         # Update robot sensors
         closest_activation = self.robot.update_sensors(self.walls)

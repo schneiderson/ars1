@@ -44,7 +44,7 @@ def kalman_filter(mu_t_minus_1, sigma_t_minus_1, u_t, z_t):
     # Correct our covariance matrix (decrease covariance) due to the sensor data
     sigma_t = np.matmul(np.identity(3) - np.matmul(K_t, C_t), sigma_bar_t)
 
-    print(sigma_t)
+    #print(sigma_t)
 
     return mu_t, sigma_t  # Prediction of pose at time t, covariance at time t
 

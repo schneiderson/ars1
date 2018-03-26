@@ -152,10 +152,12 @@ class Robot:
         # Store previous believed pose (from KF) before updating the current
         self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle = (self.bel_posx, self.bel_posy, self.bel_angle)
 
-        # Odometry stuff:
-        self.od_posx, self.od_posy, self.od_angle = kin.bot_calc_coordinate(
+        # Odometry pose:
+		# first calculate position based on previous believe and right and left wheel velocities
+		# this will then be taken to induce noise through the odometry model
+        od_tmp_posx, od_tmp_posy, od_tmp_angle = kin.bot_calc_coordinate(
             self.bel_posx, self.bel_posy, self.bel_angle, left_velocity, right_velocity, delta_time / 10, self.radius * 2)
-        delta_x, delta_y, delta_theta, pos = self.get_odometry_based_value()  # Get predicted change in pose from the odometry model
+        delta_x, delta_y, delta_theta, pos = self.get_odometry_based_value(od_tmp_posx, od_tmp_posy, od_tmp_angle)  # Get change in pose from the odometry model with induced noise
         U_t = delta_x, delta_y, delta_theta  # U_t is used as parameter in the KF
         self.od_posx, self.od_posy, self.od_angle = pos
 
@@ -175,19 +177,47 @@ class Robot:
         self.set_robot_believed_position(mu_t[0], mu_t[1], mu_t[2])
 
         # Print filter outputs
-        print("----------------")
-        print("beacons est. pos.: ", Z_t)
-        print("od estimated pos.: ", self.get_robot_od_position())
-        print("KF believed pose: ", self.get_robot_bel_position())
-        print("*real world pose: ", self.get_robot_position())
-        print("od believed delta pose: ", U_t)
-        print("*real world delta pose: ", delta_pose)
-        print("----------------")
+        # print("----------------")
+        # print("beacons est. pos.: ", Z_t)
+        # print("od estimated pos.: ", self.get_robot_od_position())
+        # print("KF believed pose: ", self.get_robot_bel_position())
+        # print("*real world pose: ", self.get_robot_position())
+        # print("od believed delta pose: ", U_t)
+        # print("*real world delta pose: ", delta_pose)
+        # print("----------------")
 
-    def get_odometry_based_value(self):
+
+    def get_odometry_deviation(self):
+        od = self.get_robot_od_position()
+        pos = self.get_robot_position()
+        x_dev = abs(od[0] - pos[0])
+        y_dev = abs(od[1] - pos[1])
+        angle_dev = abs(od[2] - pos[2])
+        return (x_dev, y_dev, angle_dev)
+
+
+    def get_kf_deviation(self):
+        bel = self.get_robot_bel_position()
+        pos = self.get_robot_position()
+        x_dev = abs(bel[0] - pos[0])
+        y_dev = abs(bel[1] - pos[1])
+        angle_dev = abs(bel[2] - pos[2])
+        return (x_dev, y_dev, angle_dev)
+
+
+    def get_beacon_deviation(self):
+        be = self.get_robot_beacon_position()
+        pos = self.get_robot_position()
+        x_dev = abs(be[0] - pos[0])
+        y_dev = abs(be[1] - pos[1])
+        angle_dev = abs(be[2] - pos[2])
+        return (x_dev, y_dev, angle_dev)
+
+
+    def get_odometry_based_value(self, x, y, theta):
         ut = [(self.prev_bel_posx, self.prev_bel_posy, self.prev_bel_angle),
-              (self.od_posx, self.od_posy, self.od_angle)]
-        x = (self.od_posx, self.od_posy, self.od_angle)
+              (x, y, theta)]
+        x = (x, y, theta)
         sample_pos = self.odometry.sample_motion_model(ut, x)
 
         change_in_x = sample_pos[0] - self.prev_bel_posx
