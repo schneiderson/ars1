@@ -10,6 +10,7 @@ from bot import beacon as bc
 from bot import trigonometry as tri
 import time
 import queue
+import matplotlib.patches as matches
 import matplotlib.pyplot as plt
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
@@ -201,21 +202,25 @@ class Environment:
                     # Find out how many measurements
                     x = np.linspace(1, len(beacon_error[0]), len(beacon_error[0]))
 
+                    fig1 = plt.figure()
                     # Plot the X errors
-                    plt.plot(x, beacon_error[0], '-', linewidth=2)
-                    plt.plot(x, kalman_error[0], '-', linewidth=2)
-                    plt.plot(x, odometry_error[0], '-', linewidth=2)
+
+                    plt.subplot(3, 1, 1)
+                    plt.plot(x, beacon_error[0], '-', x, kalman_error[0], '-', x, odometry_error[0], '-', linewidth=2)
+                    plt.ylabel('X-coordinate')
+                    plt.title("Deviation from actual pose")
 
                     # Plot the Y errors
-                    plt.plot(x, beacon_error[1], '-', linewidth=2)
-                    plt.plot(x, kalman_error[1], '-', linewidth=2)
-                    plt.plot(x, odometry_error[1], '-', linewidth=2)
+                    plt.subplot(3, 1, 2)
+                    plt.plot(x, beacon_error[1], '-', x, kalman_error[1], '-', x, odometry_error[1], '-', linewidth=2)
+                    plt.ylabel('Y-coordinate')
 
                     # Plot the angle errors
-                    plt.plot(x, beacon_error[2], '-', linewidth=2)
-                    plt.plot(x, kalman_error[2], '-', linewidth=2)
-                    plt.plot(x, odometry_error[2], '-', linewidth=2)
-
+                    plt.subplot(3, 1, 3)
+                    l1, l2, l3 = plt.plot(x, beacon_error[2], '-', x, kalman_error[2], '-', x, odometry_error[2], '-', linewidth=2)
+                    plt.xlabel('number of elements')
+                    plt.ylabel('Angle (degrees)')
+                    plt.figlegend((l1, l2, l3), ('sensor', 'kalman filter', 'odometry'))
 
                     plt.show()
                     self._paused = False
