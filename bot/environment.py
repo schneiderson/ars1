@@ -10,6 +10,7 @@ from bot import beacon as bc
 from bot import trigonometry as tri
 import time
 import queue
+import matplotlib.pyplot as plt
 
 __author__ = 'Steffen Schneider, Camiel Kerkhofs, Olve Dragesat'
 
@@ -191,7 +192,34 @@ class Environment:
             if event.key == pygame.K_SPACE:
                 ## PAUSE
                 if self._paused:
+
+                    # Transpose the error matrices to plot more easily
+                    beacon_error = np.transpose(self.delta_beacon)
+                    kalman_error = np.transpose(self.delta_kalman)
+                    odometry_error = np.transpose(self.delta_odometry)
+
+                    # Find out how many measurements
+                    x = np.linspace(1, len(beacon_error[0]), len(beacon_error[0]))
+
+                    # Plot the X errors
+                    plt.plot(x, beacon_error[0], '-', linewidth=2)
+                    plt.plot(x, kalman_error[0], '-', linewidth=2)
+                    plt.plot(x, odometry_error[0], '-', linewidth=2)
+
+                    # Plot the Y errors
+                    plt.plot(x, beacon_error[1], '-', linewidth=2)
+                    plt.plot(x, kalman_error[1], '-', linewidth=2)
+                    plt.plot(x, odometry_error[1], '-', linewidth=2)
+
+                    # Plot the angle errors
+                    plt.plot(x, beacon_error[2], '-', linewidth=2)
+                    plt.plot(x, kalman_error[2], '-', linewidth=2)
+                    plt.plot(x, odometry_error[2], '-', linewidth=2)
+
+
+                    plt.show()
                     self._paused = False
+
                 else:
                     self._paused = True
             if event.key == pygame.K_LEFT:
@@ -492,6 +520,8 @@ class Environment:
                         self._running = False
 
             #pygame.quit()
+
+
             return self.fitness()
         except IndexError as inst:
             print('\033[91m' + "=== INDEX ERROR === Simulation failed with message: ")
