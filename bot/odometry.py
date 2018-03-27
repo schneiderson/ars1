@@ -75,7 +75,7 @@ class Odometry:
         return x_prime, y_prime, angle
 
 
-''' Helper function '''
+''' Helper functions '''
 
 
 def delta_trans(x1, y1, x2, y2):

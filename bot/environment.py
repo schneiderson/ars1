@@ -27,6 +27,7 @@ ORANGE = (255, 165, 0)
 
 DRAW_KALMAN_HISTORY = True
 
+
 class Environment:
     """
         The environment controls a single simulation at once (graphics are optional)
@@ -62,8 +63,8 @@ class Environment:
 
         self.frames = 0
         self.updates = 0
-        self.time = 0                                   # elapsed time in milliseconds
-        self.simulation_start_time = datetime.now()     # timestamp
+        self.time = 0  # elapsed time in milliseconds
+        self.simulation_start_time = datetime.now()  # timestamp
 
     def __init__(self):
         self._pygame_initialized = False
@@ -82,7 +83,7 @@ class Environment:
         self.velocity_base = 0.1
         self.velocity_min = -1
         self.velocity_max = 1
-        
+
         self.delta_kalman = []
         self.delta_odometry = []
         self.delta_beacon = []
@@ -191,8 +192,12 @@ class Environment:
             quit()
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
-                ## PAUSE
+                # PAUSE
                 if self._paused:
+                    # Unpause the simulation
+                    self._paused = False
+                else:
+                    # When simulation is paused, a plot of the errors is shown to the user
 
                     # Transpose the error matrices to plot more easily
                     beacon_error = np.transpose(self.delta_beacon)
@@ -203,30 +208,40 @@ class Environment:
                     x = np.linspace(1, len(beacon_error[0]), len(beacon_error[0]))
 
                     fig1 = plt.figure()
-                    # Plot the X errors
-
-                    plt.subplot(3, 1, 1)
-                    plt.plot(x, beacon_error[0], '-', x, kalman_error[0], '-', x, odometry_error[0], '-', linewidth=2)
-                    plt.ylabel('X-coordinate')
                     plt.title("Deviation from actual pose")
+
+                    # Plot the X errors
+                    plt.subplot(3, 1, 1)
+                    plt.plot(x, beacon_error[0], '-',
+                             x, kalman_error[0], '-',
+                             x, odometry_error[0], '-',
+                             linewidth=2)
+                    plt.ylabel('X-coordinate')
 
                     # Plot the Y errors
                     plt.subplot(3, 1, 2)
-                    plt.plot(x, beacon_error[1], '-', x, kalman_error[1], '-', x, odometry_error[1], '-', linewidth=2)
+                    plt.plot(x, beacon_error[1], '-',
+                             x, kalman_error[1], '-',
+                             x, odometry_error[1], '-',
+                             linewidth=2)
                     plt.ylabel('Y-coordinate')
 
                     # Plot the angle errors
                     plt.subplot(3, 1, 3)
-                    l1, l2, l3 = plt.plot(x, beacon_error[2], '-', x, kalman_error[2], '-', x, odometry_error[2], '-', linewidth=2)
+                    l1, l2, l3 = plt.plot(x, beacon_error[2], '-',
+                                          x, kalman_error[2], '-',
+                                          x, odometry_error[2], '-',
+                                          linewidth=2)
                     plt.xlabel('number of elements')
                     plt.ylabel('Angle (degrees)')
                     plt.figlegend((l1, l2, l3), ('sensor', 'kalman filter', 'odometry'))
 
+                    # Show the plot to the user
                     plt.show()
-                    self._paused = False
 
-                else:
+                    # Pause the simulation
                     self._paused = True
+
             if event.key == pygame.K_LEFT:
                 self.robot.vel_left += self.velocity_base
             if event.key == pygame.K_RIGHT:
@@ -277,22 +292,25 @@ class Environment:
         self.robot.move_robot(delta_t, self.beacons, self.walls)
 
         # get deviations for plotting
-        if( len(self.delta_kalman) < 1000): 
+        if len(self.delta_kalman) < 1000:
             self.delta_kalman.append(self.robot.get_kf_deviation())
-            avg_xy = ( np.sum([x[0] for x in self.delta_kalman]) / len(self.delta_kalman) + np.sum([x[1] for x in self.delta_kalman]) / len(self.delta_kalman) ) / 2
+            avg_xy = (np.sum([x[0] for x in self.delta_kalman]) / len(self.delta_kalman) + np.sum(
+                [x[1] for x in self.delta_kalman]) / len(self.delta_kalman)) / 2
             avg_angle = np.sum([x[2] for x in self.delta_kalman]) / len(self.delta_kalman)
             print("----------------")
             print("kalman avg_xy deviation: ", avg_xy)
             print("kalman avg_angle deviation: ", avg_angle)
-        if( len(self.delta_odometry) < 1000): 
+        if len(self.delta_odometry) < 1000:
             self.delta_odometry.append(self.robot.get_odometry_deviation())
-            avg_xy = ( np.sum([x[0] for x in self.delta_odometry]) / len(self.delta_odometry) + np.sum([x[1] for x in self.delta_odometry]) / len(self.delta_odometry) ) / 2
+            avg_xy = (np.sum([x[0] for x in self.delta_odometry]) / len(self.delta_odometry) + np.sum(
+                [x[1] for x in self.delta_odometry]) / len(self.delta_odometry)) / 2
             avg_angle = np.sum([x[2] for x in self.delta_odometry]) / len(self.delta_odometry)
             print("odometry avg_xy deviation: ", avg_xy)
             print("odometry avg_angle deviation: ", avg_angle)
-        if( len(self.delta_beacon) < 1000): 
+        if len(self.delta_beacon) < 1000:
             self.delta_beacon.append(self.robot.get_beacon_deviation())
-            avg_xy = ( np.sum([x[0] for x in self.delta_beacon]) / len(self.delta_beacon) + np.sum([x[1] for x in self.delta_beacon]) / len(self.delta_beacon) ) / 2
+            avg_xy = (np.sum([x[0] for x in self.delta_beacon]) / len(self.delta_beacon) + np.sum(
+                [x[1] for x in self.delta_beacon]) / len(self.delta_beacon)) / 2
             avg_angle = np.sum([x[2] for x in self.delta_beacon]) / len(self.delta_beacon)
             print("beacon avg_xy deviation: ", avg_xy)
             print("beacon avg_angle deviation: ", avg_angle)
@@ -335,7 +353,7 @@ class Environment:
         self.frames += 1
 
         debug = self.get_debug_output()
-        
+
         # Clean display
         self._display_surf.fill(GRAY)
 
@@ -385,7 +403,7 @@ class Environment:
         if X_odometry[0] is not None:
             pygame.draw.circle(self._display_surf, RED, (int(X_odometry[0]), int(X_odometry[1])), 15, 7)
             robot_head = tri.line_endpoint((int(X_odometry[0]), int(X_odometry[1])), X_odometry[2], 15)
-            pygame.draw.line(self._display_surf, BLACK,  (int(X_odometry[0]), int(X_odometry[1])), robot_head, 2)
+            pygame.draw.line(self._display_surf, BLACK, (int(X_odometry[0]), int(X_odometry[1])), robot_head, 2)
 
         # Draw Kalman output(s)
         X_believe = self.robot.get_robot_bel_position()
@@ -396,7 +414,7 @@ class Environment:
         # for each item in self.q, draw to pygame
         for i in range(0, self.qsize):
             belief = self.q.get()
-            if i == self.qsize-1 or DRAW_KALMAN_HISTORY:
+            if i == self.qsize - 1 or DRAW_KALMAN_HISTORY:
                 pygame.draw.circle(self._display_surf, GREEN, (int(belief[0]), int(belief[1])), 15, 7)
                 robot_head = tri.line_endpoint((int(belief[0]), int(belief[1])), belief[2], 15)
                 pygame.draw.line(self._display_surf, BLACK, (int(belief[0]), int(belief[1])), robot_head, 2)
@@ -407,50 +425,53 @@ class Environment:
             self._display_surf.blit(game_font.render(info, False, BLACK), (830, 50 + (index * 18)))
 
         # Kalman info
-        types = [(BLUE, 'Actual position', 0), (ORANGE, 'Beacon position', 7), (RED, 'Odometry position', 7), (GREEN, 'Kalman position', 0)]
+        types = [(BLUE, 'Actual position', 0),
+                 (ORANGE, 'Beacon position', 7),
+                 (RED, 'Odometry position', 7),
+                 (GREEN, 'Kalman position', 0)]
         pos = [830, 550]
         for t in types:
-            pygame.draw.circle(self._display_surf, t[0], pos, int(self.robot.radius/2), t[2])
-            self._display_surf.blit(game_font.render(t[1], False, BLACK), (pos[0]+40, pos[1]-15))
-            pos[1] += int(self.robot.radius)+10
+            pygame.draw.circle(self._display_surf, t[0], pos, int(self.robot.radius / 2), t[2])
+            self._display_surf.blit(game_font.render(t[1], False, BLACK), (pos[0] + 40, pos[1] - 15))
+            pos[1] += int(self.robot.radius) + 10
 
         # Update display
         pygame.display.update()
 
     def get_debug_output(self):
         return ["Debug info:",
-                 "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
-                 "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
-                 "Time dilation: * " + str(self.time_dilation),
-                 "Frames: " + str(self.frames),
-                 "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "Updates: " + str(self.updates),
-                 "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
-                 "",
-                 "Robot:",
-                 "  Angle: " + str(int(self.robot.angle)),
-                 "  Pos_x: " + str(int(self.robot.posx)),
-                 "  Pos_y: " + str(int(self.robot.posy)),
-                 "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
-                 "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
-                 "",
-                 "Fitness:",
-                 "  Cleaned: " + str(int(self.cleaned)),
-                 "  Collisions: " + str(self.robot.num_collisions),
-                 "  Activations: " + str(len(self.activations)),
-                 "  Evaluation: " + str(int(self.fitness())),
-                 "",
-                 "",
-                 # "Genetic algorithm: ",
-                 # "   Current generation: ",
-                 # "      Gen number: " + str(gen.GenAlg.generation_counter),
-                 # "      Size: " + str(gen.GenAlg.pop_size_current),
-                 # "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
-                 # "   Last generation: ",
-                 # "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
-                 # "      Best cost: " + str(gen.GenAlg.best_cost),
-                 # "      Avg cost: " + str(gen.GenAlg.avg_cost),
-                 "HIT SPACE TO PAUSE"]
+                "Realtime: " + str(int(self.get_elapsed_time(realtime=True) / 1000)) + " s",
+                "Simulation time: " + str(int(self.get_elapsed_time() / 1000)) + " s",
+                "Time dilation: * " + str(self.time_dilation),
+                "Frames: " + str(self.frames),
+                "FPS: " + str(int(self.frames / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                "Updates: " + str(self.updates),
+                "UPS: " + str(int(self.updates / max(1, (self.get_elapsed_time(realtime=True) / 1000)))),
+                "",
+                "Robot:",
+                "  Angle: " + str(int(self.robot.angle)),
+                "  Pos_x: " + str(int(self.robot.posx)),
+                "  Pos_y: " + str(int(self.robot.posy)),
+                "  Vel_left: " + str(float(format(self.robot.vel_left, '.2f'))),
+                "  Vel_right: " + str(float(format(self.robot.vel_right, '.2f'))),
+                "",
+                "Fitness:",
+                "  Cleaned: " + str(int(self.cleaned)),
+                "  Collisions: " + str(self.robot.num_collisions),
+                "  Activations: " + str(len(self.activations)),
+                "  Evaluation: " + str(int(self.fitness())),
+                "",
+                "",
+                # "Genetic algorithm: ",
+                # "   Current generation: ",
+                # "      Gen number: " + str(gen.GenAlg.generation_counter),
+                # "      Size: " + str(gen.GenAlg.pop_size_current),
+                # "      Progress: " + str(gen.GenAlg.gen_progress) + "/" + str(gen.GenAlg.pop_size_current),
+                # "   Last generation: ",
+                # "      Gen number: " + str(gen.GenAlg.generation_counter - 1),
+                # "      Best cost: " + str(gen.GenAlg.best_cost),
+                # "      Avg cost: " + str(gen.GenAlg.avg_cost),
+                "HIT SPACE TO PAUSE"]
 
     def get_elapsed_time(self, realtime=False):
         """
@@ -468,7 +489,8 @@ class Environment:
         else:
             return int(elapsed_t * self.time_dilation)
 
-    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None, recurrence=False, start_x=0, start_y=0, start_angle=0, fitness_id=1):
+    def simulate(self, graphics_enabled=True, time_dilation=1, timeout=0, weights=[], static_delta_t=None,
+                 recurrence=False, start_x=0, start_y=0, start_angle=0, fitness_id=1):
         """
             Start a simulation
             graphics_enabled: boolean; If set to false, graphics rendering is skipped
@@ -524,8 +546,7 @@ class Environment:
                     if (self.get_elapsed_time() > (timeout * 1000)):
                         self._running = False
 
-            #pygame.quit()
-
+            # pygame.quit()
 
             return self.fitness()
         except IndexError as inst:
@@ -555,7 +576,7 @@ class Environment:
 
         elif self.fitness_id == 2:
             # 2: Total number of dust collected devided by the number of collisions
-            return self.cleaned / (1+self.robot.num_collisions * 0.3)
+            return self.cleaned / (1 + self.robot.num_collisions * 0.3)
 
 
         elif self.fitness_id == 3 and len(self.activations) > 0:
@@ -564,7 +585,7 @@ class Environment:
             for i in self.activations:
                 total += i
             avg = total / len(self.activations)
-            return (self.cleaned * avg) / (1+(self.robot.num_collisions * 0.3))
+            return (self.cleaned * avg) / (1 + (self.robot.num_collisions * 0.3))
 
 
         elif self.fitness_id == 4 and len(self.activations) > 0 and len(self.activations) == len(self.rotation_speeds):
@@ -580,9 +601,9 @@ class Environment:
                 v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
 
                 # Absolute algebraic difference
-                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+                delta_v = abs(self.rotation_speeds[n][0] - self.rotation_speeds[n][1])
 
-                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                evaluate = (v * (1 - math.sqrt(delta_v))) * (1 - i)
                 fitness += evaluate
 
             return fitness
@@ -601,9 +622,9 @@ class Environment:
                 v = (abs(self.rotation_speeds[n][0]) + abs(self.rotation_speeds[n][1])) / 2
 
                 # Absolute algebraic difference
-                delta_v = abs(self.rotation_speeds[n][0]-self.rotation_speeds[n][1])
+                delta_v = abs(self.rotation_speeds[n][0] - self.rotation_speeds[n][1])
 
-                evaluate = (v*(1-math.sqrt(delta_v)))*(1-i)
+                evaluate = (v * (1 - math.sqrt(delta_v))) * (1 - i)
                 fitness += evaluate
 
             return self.cleaned / fitness

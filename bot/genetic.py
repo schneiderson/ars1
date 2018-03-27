@@ -1,3 +1,4 @@
+''' Genetic Algorithm '''
 import datetime
 import random
 import math
@@ -58,7 +59,7 @@ class Individual:
         self.cost = cost
 
     def mutate(self, mutation_rate, mutation_size, value_range):
-        self.hard_mutate(mutation_rate,value_range)
+        self.hard_mutate(mutation_rate, value_range)
         # value_range_size = abs(value_range[1] - value_range[0])
         # for nucleotide in self.gene:
         #     if random.random() < mutation_rate:
@@ -148,7 +149,10 @@ class GenAlg:
         self.value_range = value_range
         self.mutation_rate = mutation_rate
         self.mutation_size = mutation_size
-        self.pop = Population(pop_size=pop_size, gene_length=gene_length, value_range=value_range, init_near_zero=init_near_zero)
+        self.pop = Population(pop_size=pop_size,
+                              gene_length=gene_length,
+                              value_range=value_range,
+                              init_near_zero=init_near_zero)
         self.verbose = verbose
         if self.verbose: print("GEN 0 IS BORN, SIZE: ", len(self.pop.pop))
         self.plot = plot
@@ -183,7 +187,7 @@ class GenAlg:
         # Make offspring with some of the population. Save top individuals as elitism
         parent_rate = 0.75
         parent_individuals = int(GenAlg.pop_size * parent_rate)
-        elite_individuals = max(int(elite_rate * GenAlg.pop_size), 1)  # max(min(int(GenAlg.pop_size * 0.1), 1), 3)  # Min 1, max 3, depending on pop size
+        elite_individuals = max(int(elite_rate * GenAlg.pop_size), 1)
 
         # Sort by cost, ascending
         self.pop.pop = sorted(self.pop.pop, key=getcost)
@@ -272,7 +276,9 @@ class GenAlg:
             mut_size = self.mutation_size + (1 - self.mutation_size) / parent_individuals * i  # Less fit -> mutate more
             nr_of_children = 3 - max(int(round(i / (parent_individuals * 0.333))), 2)  # Less fit -> less children
             for j in range(0, nr_of_children):
-                new_generation.append(self.pop.pop[i].mutate(mutation_rate=mut_rate, mutation_size=mut_size, value_range=self.value_range))  # Pick one of the children randomly #
+                new_generation.append(self.pop.pop[i].mutate(mutation_rate=mut_rate,
+                                                             mutation_size=mut_size,
+                                                             value_range=self.value_range))  # Pick one of the children
 
         # Elitism
         for i in range(0, elite_individuals):
@@ -298,9 +304,6 @@ class GenAlg:
 
             print(f"END GEN {GenAlg.generation_counter}-----------------------------------------------")
         return new_generation
-
-
-#GenAlg(crossover_function=single_point_crossover, gene_length=20, max_generations=20, init_near_zero=False)
 
 
 def ensure_weights_directory():
