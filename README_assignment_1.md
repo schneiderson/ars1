@@ -1,5 +1,7 @@
 # Autonomous Robotic Systems assignment 1
 
+This is the OLD readme for assignment 1 on Genetic Algorithm
+
 ## Group 2
 - Steffen Schneider
 - Olve Drageset
@@ -14,6 +16,7 @@
 - matplotlib
 - pygame
 ---
+
 ## Execution
 To run our best performing model execute the main.py file with the following command:
 ```
@@ -45,23 +48,3 @@ to load a specific result from a directory run: (Relative path to simulation res
 ```
 python graphing/load_cost.py -d <path>
 ```
-
-plot odometry sampling
-```
-python -m graphing.visualize_sampling
-```
-![Setting relativele low noise](etc/img/low_errors.png?raw=true "Low error")
-relatively low error ( noise=[.01, .02, .02, .02] )
-
-You can set the noise by passing it as comma separated list to parameter -n
-```
-python -m graphing.visualize_sampling --n '0.03,0.03,0.2,0.2'
-```
-![high translational error](etc/img/high_trans_error.png?raw=true "high translational error")
-high translational error
-
-```
-python -m graphing.visualize_sampling --n '0.1,0.2,0.05,0.05'
-```
-![high rotational error](etc/img/high_rot_error.png?raw=true "high rotational error")
-high rotational error

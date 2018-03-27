@@ -1,4 +1,4 @@
-''' ANN MODULE '''
+""" ANN MODULE """
 import numpy as np
 
 __author__ = 'Olve Drageset, Andre Gramlich'

@@ -1,4 +1,4 @@
-''' ROBOT MODULE '''
+""" ROBOT MODULE """
 import numpy as np
 import pygame
 import math
@@ -207,7 +207,7 @@ class Environment:
                     # Find out how many measurements
                     x = np.linspace(1, len(beacon_error[0]), len(beacon_error[0]))
 
-                    fig1 = plt.figure()
+                    plt.figure()
                     plt.title("Deviation from actual pose")
 
                     # Plot the X errors

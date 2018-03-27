@@ -1,4 +1,4 @@
-''' BEACON MODULE '''
+""" BEACON MODULE """
 
 __author__ = 'Camiel Kerkhofs'
 
